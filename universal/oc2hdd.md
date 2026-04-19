@@ -1,25 +1,25 @@
-# Moving OpenCore from USB to macOS Drive
+# Chuyển OpenCore từ USB sang ổ cứng macOS
 
-## Grabbing OpenCore off the USB
+## Trích xuất OpenCore từ USB
 
-So to start, we'll first want to grab OpenCore off of our installer. To do this, we'll be using a neat tool from CorpNewt called [MountEFI](https://github.com/corpnewt/MountEFI)
+Để bắt đầu, việc đầu tiên là chúng ta phải "lôi" OpenCore từ bộ cài USB ra đã. Để làm việc này, chúng ta sẽ sử dụng một công cụ nhỏ nhưng có võ của thánh CorpNewt có tên là [MountEFI](https://github.com/corpnewt/MountEFI)
 
-For this example, we'll assume your USB is called `Install macOS Catalina`:
+Trong ví dụ này, cứ giả dụ cái USB của bạn tên là `Install macOS Catalina`:
 
 ![](../images/post-install/oc2hdd-md/usb-mount.png)
 
-Once the EFI's mounted, we'll want to grab our EFI folder on there and keep in a safe place. We'll then want to **eject the USB drive's EFI** as having multiple EFI's mounted can confuse macOS sometimes, best practice is to keep only 1 EFI mounted at a time(you can eject just the EFI, the drive itself doesn't need to be removed)
+Một khi cái EFI đã được mount (gắn kết), chúng ta sẽ sao chép lấy thư mục EFI trong đó và dán vào một chỗ an toàn (ví dụ như Desktop). Sau đó, chúng ta cần **ngắt kết nối phân vùng EFI của USB** ngay và luôn, vì để nhiều cái phân vùng EFI mount cùng lúc có thể làm macOS bị "ngáo" đó, tốt nhất là mỗi lần chỉ mount 1 cái EFI thôi (bạn chỉ cần eject cái phân vùng EFI của USB thôi, cái USB thì cứ cắm đó cũng được).
 
-**Note**: Installers made with gibMacOS's MakeInstall.bat on Windows will default to a Master Boot Record(MBR) partition map, this means there is no dedicated EFI partition instead being the `BOOT` partition that mounts by default in macOS.
+**Lưu ý**: Các bộ cài được tạo bằng MakeInstall.bat của gibMacOS trên Windows sẽ mặc định sử dụng partition map (bảng phân vùng) chuẩn Master Boot Record (MBR), có nghĩa là nó không có phân vùng EFI riêng đâu, mà thay vào đó là phân vùng `BOOT` sẽ tự động mount (gắn) mặc định trong macOS.
 
 ![](../images/post-install/oc2hdd-md/hdd-mount.png)
 
-Now with this done, lets mount our macOS drive. With macOS Catalina, macOS is actually partitioned into 2 volumes: System Partition and User Partition. This means that MountEFI may report multiple drives in it's picker but each partition will still share the same EFI(The UEFI spec only allows for 1 EFI per drive). You can tell if it's the same drive with disk**X**sY (Y is just to say what partition it is)
+Xong xuôi vụ đó rồi, giờ mount cái ổ cứng macOS của chúng ta lên. Với macOS Catalina, macOS thực ra được chia làm 2 volume (ổ đĩa): System Partition (Phân vùng hệ thống) và User Partition (Phân vùng người dùng). Cái này có nghĩa là MountEFI có thể báo cáo nhiều ổ đĩa trong danh sách chọn, nhưng mỗi phân vùng đó vẫn xài chung một cái EFI thôi (Chuẩn UEFI quy định chỉ được phép có 1 phân vùng EFI trên mỗi ổ cứng vật lý). Bạn có thể nhận biết nó có cùng ổ cứng không thông qua cái mã disk**X**sY (Y chỉ là số thứ tự phân vùng thôi, quan trọng là cái X).
 
 ![](../images/post-install/oc2hdd-md/hdd-clean.png)
 
-When you mount your main drive's EFI, you may be greeted with a folder called `APPLE`, this is used for updating the firmware on real Macs but has no effect on our hardware. You can wipe everything on the EFI partition and replace it with the one found on your USB
+Khi bạn mount (gắn) cái EFI của ổ cứng chính, bạn có thể sẽ được chào đón bằng một thư mục tên là `APPLE`, cái này sử dụng để cập nhật firmware (phần mềm điều khiển) trên máy Mac thật nhưng không có tác dụng gì với phần cứng của chúng ta cả. Bạn cứ thẳng tay xóa sạch sành sanh mọi thứ trên phân vùng EFI đó và thay thế bằng cái thư mục EFI bạn vừa copy được từ USB lúc nãy.
 
-## Special notes for legacy users
+## Lưu ý đặc biệt cho bạn đọc sử dụng máy tính chuẩn Legacy
 
-When transferring over your EFI, there are still boot sectors that need to be written to so your non-UEFI BIOS would be able to find it. So don't forget to rerun the [`BootInstallARCH.tool`](https://dortania.github.io/OpenCore-Install-Guide/installer-guide/mac-install.html#legacy-setup) on your macOS drive.
+Khi chuyển nhà cho EFI của bạn, vẫn còn mấy cái boot sectors (sector khởi động) cần phải ghi vào ổ cứng thì cái BIOS non-UEFI (BIOS đời cũ) của bạn mới tìm thấy nó và khởi động được. Nên là đừng quên chạy lại cái [`BootInstallARCH.tool`](https://dortania.github.io/OpenCore-Install-Guide/installer-guide/mac-install.html#legacy-setup) trên ổ cứng macOS của bạn nhé.

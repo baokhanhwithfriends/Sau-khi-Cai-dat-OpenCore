@@ -1,34 +1,34 @@
-# GPRW/UPRW/LANC Instant Wake Patch
+# Sửa lỗi máy tự dậy ngay lập tức khi mới vô chế độ ngủ (lệnh gọi GPRW/UPRW/LANC)
 
-Similar idea to the "Fixing Shutdown/Restart" section, macOS will instant wake if either USB or power states change while sleeping. To fix this we need to reroute the GPRW/UPRW/LANC calls to a new SSDT, verify you have instant wake issues before trying the below.
+Ý tưởng cũng na ná phần "Sửa lỗi Tắt máy/Khởi động lại", macOS sẽ tự dậy ngay lập tức (instant wake) nếu trạng thái USB hoặc nguồn điện thay đổi trong khi đang ngủ. Để trị bệnh này, chúng ta cần chuyển hướng (reroute) các lệnh gọi GPRW/UPRW/LANC sang một SSDT mới. Nhớ kiểm tra xem bạn có bị lỗi máy tự bật dậy không trước khi thử mấy chiêu dưới đây nhé.
 
-Best way to check:
+Cách kiểm tra chuẩn nhất là dùng lệnh này:
 
 ```sh
 pmset -g log | grep -e "Sleep.*due to" -e "Wake.*due to"
 ```
 
-And generally you'll get results like these:
+Và thường thì bạn sẽ nhận được kết quả kiểu như này:
 
 * `Wake [CDNVA] due to GLAN: Using AC`
-  * Generally caused by WakeOnLAN enabled, try to disable this option first in the BIOS
-  * If WOL wasn't the issue, you can try the below patches
+  * Thường do đang mở tính năng WakeOnLAN (Đánh thức qua mạng LAN), thử tắt tùy chọn này trong BIOS trước xem có hết bệnh không.
+  * Nếu WOL (Wake On Lan) không phải vấn đề, bạn thử mấy bản vá bên dưới.
 * `Wake [CDNVA] due to HDEF: Using AC`
-  * Similar to the GLAN issue
+  * Na ná cái lỗi GLAN ở trên.
 * `Wake [CDNVA] due to XHC: Using AC`
-  * Generally caused by WakeOnUSB enabled, try to disable this option first in the BIOS
-  * GPRW patch is likely needed
+  * Thường do đang mở WakeOnUSB (Đánh thức qua USB), thử tắt trong BIOS trước.
+  * Khả năng cao là cần bản vá GPRW.
 * `DarkWake from Normal Sleep [CDNPB] : due to RTC/Maintenance Using AC`
-  * Generally caused by PowerNap
+  * Thường do tính năng PowerNap gây ra.
 * `Wake reason: RTC (Alarm)`
-  * Generally caused by an app waking the system, quitting said app before you sleep should fix it
+  * Thường do một ứng dụng nào đó đánh thức hệ thống, tắt ứng dụng đó trước khi cho máy ngủ là xong.
 
-**Do not use all these patches at once**, look through your DSDT and see what you have:
+**Đừng có tham mà nhét hết mấy bản vá này cùng lúc nha**, phải soi cái DSDT của bạn xem bạn đang sử dụng lệnh gọi nào đã:
 
-| SSDT | ACPI Patch | Comments |
+| SSDT | ACPI Patch (Bản vá ACPI) | Comments (Ghi chú) |
 | :--- | :--- | :--- |
-| [SSDT-GPRW](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/SSDT-GPRW.aml) | [GPRW to XPRW Patch](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/GPRW-Patch.plist) | Use this if you have `Method (GPRW, 2` in your ACPI |
-| [SSDT-UPRW](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/SSDT-UPRW.aml) | [UPRW to XPRW Patch](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/UPRW-Patch.plist) | Use this if you have `Method (UPRW, 2` in your ACPI |
-| [SSDT-LANC](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/SSDT-LANC.aml) | [LANC to XPRW Patch](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/LANC-Patch.plist) | Use this if you have  `Device (LANC)` in your ACPI |
+| [SSDT-GPRW](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/SSDT-GPRW.aml) | [GPRW to XPRW Patch](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/GPRW-Patch.plist) | Xài bản vá này nếu bạn tìm thấy lệnh gọi `Method (GPRW, 2` trong bảng ACPI  |
+| [SSDT-UPRW](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/SSDT-UPRW.aml) | [UPRW to XPRW Patch](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/UPRW-Patch.plist) | Xài bản vá này nếu bạn tìm thấy lệnh gọi `Method (UPRW, 2` trong bảng ACPI |
+| [SSDT-LANC](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/SSDT-LANC.aml) | [LANC to XPRW Patch](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/LANC-Patch.plist) | Xài bản vá này nếu bạn tìm thấy lệnh gọi `Device (LANC)` trong bảng ACPI |
 
-ACPI Patches and SSDTs courtesy of [Rehabman](https://www.tonymacx86.com/threads/guide-using-clover-to-hotpatch-acpi.200137/), [1Revenger1](https://github.com/1Revenger1) and [Fewtarius](https://github.com/dortania/laptop-guide)
+Các bản vá ACPI và SSDT được cung cấp bởi các đại hiệp [Rehabman](https://www.tonymacx86.com/threads/guide-using-clover-to-hotpatch-acpi.200137/), [1Revenger1](https://github.com/1Revenger1) và [Fewtarius](https://github.com/dortania/laptop-guide)

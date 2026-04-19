@@ -1,57 +1,59 @@
-# Battery Status
+# Sửa lỗi hiển thị Thông số Pin
 
-With [ECEnabler.kext](https://github.com/1Revenger1/ECEnabler/releases/latest), ACPI patching is no longer required for working battery percentage. If you would like battery functionality beyond charge percentage (e.g. cycle count, or temperature/other supplemental data) or have dual batteries, you still will need to create ACPI patches - see the resources below.
+Nhờ có [ECEnabler.kext](https://github.com/1Revenger1/ECEnabler/releases/latest), việc chỉnh sửa ACPI không còn là bắt buộc để hiển thị phần trăm pin nữa. Nhưng nếu bạn muốn nhiều thứ hơn là chỉ xem phần trăm (ví dụ: kiểm tra số chu kỳ sạc (cycle count), nhiệt độ, hoặc máy bạn có 2 viên pin) thì bạn vẫn phải ngồi lại tạo patch ACPI – xem mấy nguồn bài viết bên dưới nhé.
 
-* If battery status is not working even with ECEnabler, make sure you have the [SMCBatteryManager](https://github.com/Acidanthera/VirtualSMC/releases/latest) VirtualSMC plugin enabled in your OpenCore configuration.
+* Nếu đã cài ECEnabler mà pin vẫn chưa hiện dung lượng còn lại, hãy kiểm tra lại xem bạn đã bật plugin [SMCBatteryManager](https://github.com/Acidanthera/VirtualSMC/releases/latest) của VirtualSMC trong cấu hình OpenCore chưa nha.
 
-* Certain devices, such as the Surface 3, Surface Pro 5, Surface Book 2, and Surface Laptop (and all subsequent Surface devices), use proprietary Embedded Controllers (or other similar hardware) instead of standard ACPI battery devices and OperationRegion fields, and thus without device-specific kexts, battery status cannot work.
+* Một số thiết bị như Surface 3, Surface Pro 5, Surface Book 2, và Surface Laptop (cùng các dòng Surface đời sau) sử dụng bộ điều khiển nhúng (Embedded Controllers) riêng biệt hoặc phần cứng tương đương thay vì chuẩn ACPI thông thường, nên nếu không có kext dành riêng cho dòng máy đó thì pin sẽ không bao giờ hiện được đâu.
 
-::: details Battery Patching Resources
+* Một số bạn đọc sẽ nhận thấy hình như % pin đo được giữa macOS và Windows không giống nhau mà chênh nhau vài %, đây là bình thường nhé! Apple thiết kế macOS giữ % khi máy đầy 100% tương đối lâu sau đó mới sụt % pin xuống (Đối với MacBook cũng tương tự như vậy), do cách đo đó nên % pin sẽ có chênh lệch giữa Windows và macOS.
 
-* Note: If you are using the ECEnabler kext, you do not need to split EC fields as shown in the guides below. This means that you can use the field names in your DSDT directly instead of through utility methods (e.g. `B1B2`, `B1B4`, `RE1B`, and `RECB`).
+::: details Tài liệu vá lỗi hiện thông tin Pin
 
-## Dual Battery
+* Lưu ý (Note): Nếu bạn dùng kext ECEnabler, bạn không cần phải chia nhỏ các trường EC (EC fields) như mấy hướng dẫn bên dưới. Bạn cứ việc dùng tên trường trực tiếp trong DSDT thay vì qua mấy hàm tiện ích (dạng như `B1B2`, `B1B4`, `RE1B` hoặc `RECB`).
 
-Because macOS does not properly support systems with dual batteries, you have to merge the two batteries in ACPI.
+## Máy tính có 2 Pin
 
-Refer to the VirtualSMC documentation for information on how to handle dual-battery laptops: [Link](https://github.com/acidanthera/VirtualSMC/blob/master/Docs/Dual%20Battery%20Support.md)
+Vì macOS không hỗ trợ tốt các máy có 2 viên pin (do không có con MacBook nào có 2 cục pin hết), bạn buộc phải "gộp" chúng lại làm một trong ACPI.
 
-## Cycle Count
+Tham khảo tài liệu của VirtualSMC để biết cách xử lý laptop có 2 pin: [Đường link](https://github.com/acidanthera/VirtualSMC/blob/master/Docs/Dual%20Battery%20Support.md)
 
-Some laptop vendors, such as HP, already supply cycle count information. However, their firmwares either do not implement or expose it within the `_BIX` method. In the past, Rehabman's ACPIBatteryManager employed a hack to support cycle counts on firmwares which do not have a `_BIX` method, however with SMCBatteryManager this is no longer supported.
+## Số chu kỳ sạc
 
-Refer to the VirtualSMC documentation for information on how to transition from the ACPIBatteryManager cycle count hack to a proper `_BIX` method implementation: [Link](https://github.com/acidanthera/VirtualSMC/blob/master/Docs/Transition%20from%20zprood%27s%20cycle%20count%20hack.md)
+Một số hãng laptop như HP có cung cấp sẵn thông tin số chu kỳ sạc. Tuy nhiên, vi chương trình của họ hoặc là không triển khai phần này, hoặc là giấu nó đi không cho phương thức `_BIX` có trong ACPI để hệ điều hành truy cập. In the past, Trước đây, ACPIBatteryManager của Rehabman có dùng một cái "mẹo" (hack) phương thức `_BIX` để hỗ trợ, nhưng với SMCBatteryManager thì cái mẹo này không còn xài được nữa.
 
-The documentation may also prove useful for those implementing cycle count for the first time rather than transitioning from the ACPIBatteryManager cycle count hack.
+Tham khảo tài liệu VirtualSMC để biết cách chuyển từ cái mẹo cũ sang cách triển khai phương thức `_BIX` chuẩn chỉnh: [Link](https://github.com/acidanthera/VirtualSMC/blob/master/Docs/Transition%20from%20zprood%27s%20cycle%20count%20hack.md)
 
-## Battery Information Supplement
+Tài liệu này cũng rất hữu ích cho mấy anh em lần đầu vọc vạch làm số chu kỳ sạc luôn.
 
-Although many laptops supply supplemental battery information (e.g. manufacture date and battery temperature) in their EC fields, the traditional `_BIF`, `_BIX`, and `_BST` ACPI methods do not support providing this information. Thus, SMCBatteryManager supports two ACPI methods, `CBIS` and `CBSS` to provide this information to macOS.
+## Thông tin Pin bổ sung
 
-Refer to the VirtualSMC documentation for information on how to implement these methods: [Link](https://github.com/acidanthera/VirtualSMC/blob/master/Docs/Battery%20Information%20Supplement.md)
+Mặc dù nhiều laptop có cung cấp thêm thông tin (như ngày sản xuất, nhiệt độ pin) trong các trường EC, nhưng các phương thức ACPI truyền thống như `_BIF`, `_BIX` và `_BST` lại không hỗ trợ gửi mấy gói tin này qua. Vì vậy, SMCBatteryManager hỗ trợ thêm 2 phương thức là `CBIS` và `CBSS` để đưa thông tin này vào macOS.
+
+Tham khảo tài liệu VirtualSMC về cách triển khai các phương thức này tại đây: [Đường link](https://github.com/acidanthera/VirtualSMC/blob/master/Docs/Battery%20Information%20Supplement.md)
 
 :::
 
-::: details Legacy Patching Resources
+::: details Tài liệu vá kiểu cũ
 
-* Note: Rehabman's guides say to use ACPIBatteryManager, you must use SMCBatteryManager instead.
+* Lưu ý (Note): Các hướng dẫn của Rehabman bảo dùng ACPIBatteryManager, nhưng bạn phải dùng SMCBatteryManager thay thế nhé.
 
-## DSDT Patching
+## Bản vá DSDT
 
-While custom DSDT injection should be avoided as to prevent issues with Windows and firmware updates, it can be quite helpful as a starting point since it's a bit easier to grasp and do yourself:
+Mặc dù việc nạp file DSDT tùy chỉnh nên hạn chế để tránh gây lỗi cho Windows hoặc khi cập nhật firmware, nhưng nó là điểm khởi đầu rất tốt vì khá dễ hiểu và dễ tự làm:
 
 **[Rehabman's how to patch DSDT for working battery status](https://www.tonymacx86.com/threads/guide-how-to-patch-dsdt-for-working-battery-status.116102/)**
 
-* Note: When re-injecting your DSDT, it should be the first in the list of ACPI -> Add in the config.plist. And also remember that the patched DSDT would also go into EFI/OC/ACPI
+* Lưu ý (Note): Khi nạp lại DSDT, nó phải nằm ở vị trí đầu tiên trong danh sách ACPI -> Add của file config.plist. Và nhớ là file DSDT đã vá phải được bỏ vào thư mục EFI/OC/ACPI nữa nha.
 
-* Note 2: Avoid using the MaciASL and iASL provided by Rehabman, they have been long neglected and so highly recommended grabbing a newer variant from Acidanthera: [MaciASL](https://github.com/acidanthera/MaciASL/releases)
+* Lưu ý 2 (Note 2): Tránh dùng bản MaciASL và iASL của Rehabman vì tụi nó "cổ lai hy" lắm rồi, bỏ lâu không ai ngó ngàng tới. Bạn nên lấy bản mới của Acidanthera tại đây: [MaciASL](https://github.com/acidanthera/MaciASL/releases)
 
-## Battery Hot-patching
+## Vá nóng Pin
 
-Once you've finally gotten your DSDT patched and battery working in macOS, it's time to finally create our very own hot-patches. How these differ from regular DSDT patching is that it's done on the fly with the DSDT allowing for greater flexibility with firmware updates:
+Sau khi bạn đã vá DSDT và thấy pin hiện lên ngon lành trong macOS, giờ là lúc nâng cấp lên "vá nóng" (hot-patch). Khác với vá DSDT thông thường, vá nóng sẽ diễn ra ngay lúc máy đang chạy, giúp bạn thoải mái cập nhật firmware mà không lo bị lỗi:
 
 **[Rehabman's Guide to Using Clover to "hotpatch" ACPI](https://www.tonymacx86.com/threads/guide-using-clover-to-hotpatch-acpi.200137/)**
 
-* Note: Specifically post #2 refers to battery hot-patching
+* Lưu ý (Note): Cụ thể là ở bài viết số #2 sẽ nói về vá nóng cho pin.
 
 :::

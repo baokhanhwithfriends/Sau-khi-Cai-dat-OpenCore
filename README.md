@@ -1,93 +1,94 @@
-# OpenCore Post-Install
+# Sau khi cài đặt OpenCore
 
-Welcome to the OpenCore Post-Install guide! Please note that if you have not installed macOS yet, we recommend you follow our install guide:
+Chào mừng các dân chơi đến với hướng dẫn sau khi cài đặt (Post-Install) OpenCore! Lưu ý nhẹ là nếu bạn chưa cài đặt xong macOS, thì mình khuyên bạn nên quay xe và làm theo hướng dẫn cài đặt này trước đã:
 
-* [OpenCore Install Guide](https://dortania.github.io/OpenCore-Install-Guide/)
+* [Hướng dẫn cài đặt OpenCore](https://baokhanhwithfriends.github.io/Huong-dan-cai-dat-OpenCore/)
 
-And while the info here can be applied to both OpenCore and Clover, we primarily focus on OpenCore installations. So you will need to research a bit more if you run into any issues.
+Và mặc dù mấy chiêu thức ở đây có thể áp dụng cho cả OpenCore và Clover (một trình nạp khởi động cũ), nhưng tụi mình chủ yếu "simp" OpenCore thôi. Nên nếu bạn dùng cái khác mà gặp lỗi thì chịu khó tự mò thêm chút nhé.
 
-## How to follow this guide
+## Cách "luyện" bí kíp này
 
-To start, not every section in this guide must be complete. It's up to each user whether they feel they want to add the finishing touches or resolve certain issues
+Đầu tiên phải nói luôn, mình không bắt buộc bạn phải làm hết mọi phần trong hướng dẫn này đâu nha. Tùy vào độ "chơi" của mỗi người, xem mình muốn máy xịn sò giống Mac thiệt tới mức nào hoặc cần sửa cái lỗi bug gì thôi.
 
-This guide is split into 8 sections:
+Hướng dẫn này được chia thành 8 chương:
 
-* [Universal](#universal)
-  * All users are recommended to follow
-* [USB Fixes](#usb-fixes)
-  * All users are recommended to follow as well
-* [Security](#security)
-  * For those who care about security and privacy.
-* [Laptop Specifics](#laptop-specifics)
-  * Laptop users are recommended to follow in addition to the above
-* [Cosmetics](#cosmetics)
-  * Cosmetics like OpenCore GUI and removing verbose screen output during boot
-* [Multiboot](#multiboot)
-  * Recommendations for users who are multi-booting
-* [Miscellaneous](#miscellaneous)
-  * Other misc fixes, not all users will require these fixes
-* [GPU Patching](#gpu-patching)
-  * A more in-depth look into patching macOS to support various GPU hardware variations
+* [Các chức năng cơ bản](#cac-chuc-nang-co-ban)
+  * Mình khuyên tất cả mọi người nên theo hết phần này trước để bảo đảm Hackintosh của bạn sử dụng được đủ chức năng.
+* [Sửa lỗi USB](#sua-loi-usb)
+  * Cái này ai cũng nên làm luôn cho chắc cú.
+* [Cải thiện Bảo mật](#cai-thien-bao-mat)
+  * Dành cho mấy bác hay lo xa, quan tâm đến bảo mật và quyền riêng tư giống như Mac thiệt.
+* [Hướng dẫn dành riêng cho Laptop](#huong-dan-danh-rieng-cho-laptop)
+  * Mấy bạn xài Laptop thì nên làm thêm phần này ngoài mấy cái ở trên.
+* [Làm đẹp/Giao diện](#lam-đep-giao-dien)
+  * Bổ sung thêm mấy thứ màu mè như giao diện GUI (Giao diện đồ họa người dùng) của OpenCore và tắt mấy dòng chữ chạy chạy nhức mắt khi khởi động để bản Hack thêm hoàn hảo.
+* [Chạy nhiều hệ điều hành](#chay-nhieu-he-đieu-hanh)
+  * Lời khuyên cho mấy bạn thích "bắt cá hai tay", chạy nhiều hệ điều hành một lúc.
+* [Linh tinh lang tang](#linh-tinh-lang-tang)
+  * Mấy cái sửa lỗi lặt vặt khác, không phải ai cũng cần sửa tới. Sửa được thì càng tốt thôi. 
+* [Vá lỗi Card màn hình](#va-loi-card-man-hinh)
+  * Đi sâu vào việc "chọc ngoáy" macOS để ép nó hỗ trợ nhiều loại phần cứng GPU (Bộ xử lý đồ họa) khác nhau nếu bản vá thông thường không khuất phục được cái card.
 
-### Universal
+### Các chức năng cơ bản
 
-* [Fixing Audio](./universal/audio.md)
-  * For those needing help resolving audio issues.
-* [Booting without USB](./universal/oc2hdd.md)
-  * Allowing you to boot OpenCore without the USB installed.
-* [Updating OpenCore, kexts and macOS](./universal/update.md)
-  * How to update your kexts, OpenCore and even macOS safely.
-* [Fixing DRM](./universal/drm.md)
-  * For those with DRM issues like Netflix playback.
-* [Fixing iServices](./universal/iservices.md)
-  * Help to fix misc iServices issues like iMessage.
-* [Fixing Power Management](./universal/pm.md)
-  * Fixes and helps improve both hardware idle and boosting states.
-* [Fixing Sleep](./universal/sleep.md)
-  * Numerous places to check for when fixing sleep.
+* [Sửa lỗi âm thanh](./universal/audio.md)
+  * Dành cho mấy bác cần cứu ca này, dạng như máy bị "câm" mở nhạc nhưng không nghe thấy gì.
+* [Khởi động không cần USB](./universal/oc2hdd.md)
+  * Giúp bạn khởi động vào OpenCore luôn mà không cần cắm USB mồi nữa.
+* [Cập nhật OpenCore, kexts và macOS](./universal/update.md)
+  * Cách để cập nhật Kexts (Trình điều khiển), OpenCore và thậm chí cả macOS một cách an toàn mà không làm "hư" máy.
+* [Sửa lỗi quản lý bản quyền số (DRM)](./universal/drm.md)
+  * Dành cho ai bị lỗi DRM (Quản lý bản quyền kỹ thuật số), ví dụ như không xem được Netflix, Apple TV.
+* [Sửa mấy cái ứng dụng dịch vụ của Apple không xài được](./universal/iservices.md)
+  * Giúp sửa mấy lỗi lặt vặt của iServices như iMessage (Tin nhắn) không xài được.
+* [Sửa lỗi điều phối điện năng](./universal/pm.md)
+  * Sửa lỗi và cải thiện kỹ năng sử dụng nguồn điện của macOS hiệu quả hơn, ít lãng phí điện, cho phép máy Hackintosh biết tiết kiệm điện khi vô chế độ nghỉ hoặc (bơm điện) khi cần tăng tốc hiệu năng.
+* [Sửa chế độ ngủ không hoạt động](./universal/sleep.md)
+  * Tổng hợp đủ chỗ để kiểm tra khi máy bạn bị chứng "mất ngủ" hoặc đi ngủ mà ngủ luôn không dậy.
 
-### USB Fixes
+### Sửa lỗi USB
 
-* [USB Mapping: Introduction](./usb/README.md)
-  * Starting point for USB issues like missing ports and helping with sleep.
+* [Lập sơ đồ cổng USB: Phần giới thiệu](./usb/README.md)
+  * Điểm bắt đầu để xử lý các vấn đề của cổng USB như bị macOS nhận diện thiếu cổng hoặc giúp máy ngủ ngon hơn nếu máy đang bị hội chứng "mất ngủ kinh niên".
 
-### Security
+### Cải thiện Bảo mật
 
-* [Security and FileVault](./universal/security.md)
-  * Here we go through setting up some of OpenCore's great Security features
+* [Bảo mật và Mã hóa ổ cứng](./universal/security.md)
+  * Ở đây chúng ta sẽ đi qua cách thiết lập tính năng Security (Bảo mật) xịn sò của OpenCore.
 
-### Laptop Specifics
+### Hướng dẫn dành riêng cho Laptop
 
-* [Fixing Battery Read-outs](./laptop-specific/battery.md)
-  * If your battery isn't supported out of the box with SMCBatteryManager.
+* [Sửa lỗi hiển thị phần trăm pin](./laptop-specific/battery.md)
+  * Nếu cục pin của bạn không chịu hiện đúng phần trăm ngay từ đầu với SMCBatteryManager (Trình quản lý pin SMC).
 
-### Cosmetics
+### Làm đẹp/Giao diện
 
-* [Add GUI and Boot-chime](./cosmetic/gui.md)
-  * Add a fancy GUI to OpenCore and even a boot chime!
-* [Fixing Resolution and Verbose](./cosmetic/verbose.md)
-  * Helps fix the resolution of OpenCore, and allows you to get that sweet Apple logo while booting!
-* [Fixing MacPro7,1 Memory Errors](./universal/memory.md)
-  * Fixes MacPro7,1 memory errors on boot
+* [Thêm giao diện và âm thanh khởi động](./cosmetic/gui.md)
+  * Thêm cái giao diện GUI (Giao diện đồ họa) soang chảnh cho OpenCore và thậm chí cả tiếng "Tèng" huyền thoại khi mở máy!
+* [Sửa độ phân giải không đúng và tắt màn hình dòng lệnh chạy chữ](./cosmetic/verbose.md)
+  * Giúp chỉnh lại độ phân giải của OpenCore cho nét, cho phép bạn ngắm logo Táo khuyết sexy khi khởi động thay vì nhìn chữ chạy như ma trận!
+* [Sửa lỗi bộ nhớ khi xài SMBIOS MacPro7,1](./universal/memory.md)
+  * Sửa mấy cái lỗi bộ nhớ khó chịu nếu xài SMBIOS MacPro7,1 khi khởi động.
 
-### Multiboot
+### Chạy nhiều hệ điều hành
 
-* [OpenCore Multiboot](https://dortania.github.io/OpenCore-Multiboot/)
-  * Dedicated guide to multibooting with OpenCore
-* [Setting up LauncherOption](./multiboot/bootstrap.md)
-  * Ensures Windows doesn't remove OpenCore from our system.
-* [Installing BootCamp](./multiboot/bootcamp.md)
-  * Allows us to install Bootcamp for easy boot switching.
+* [Đa khởi động với OpenCore](https://baokhanhwithfriends.github.io/Da-khoi-dong-OpenCore/)
+  * Hướng dẫn chuyên sâu để chạy nhiều hệ điều hành với OpenCore.
+* [Thiết lập tùy chọn trình khởi chạy LauncherOption](./multiboot/bootstrap.md)
+  * Bảo đảm ông trùm Windows không đá đít OpenCore khỏi máy tính của chúng ta.
+* [Cài đặt BootCamp](./multiboot/bootcamp.md)
+  * Cho phép cài đặt BootCamp (Trình hỗ trợ khởi động của Apple trên Windows) để chuyển đổi qua lại giữa các hệ điều hành dễ hơn.
 
-### Miscellaneous
+### Linh tinh lang tang
 
-* [Fixing RTC](./misc/rtc.md)
-  * Helps resolve RTC/CMOS/safe-mode reboot issues.
-* [Fixing CFG Lock](./misc/msr-lock.md)
-  * Allows use to remove some kernel patches for better stability
-* [Emulated NVRAM](./misc/nvram.md)
-  * For users who have broken NVRAM, or need to test it.
+* [Sửa lỗi đồng hồ thời gian thực (RTC)](./misc/rtc.md)
+  * Giúp giải quyết các vấn đề liên quan đến RTC/CMOS (Bộ nhớ BIOS) hoặc máy bị khởi động lại vào chế độ an toàn (Safe Mode của BIOS).
+* [Sửa lỗi khóa cấu hình (CFG Lock)](./misc/msr-lock.md)
+  * Cho phép gỡ bỏ một số bản vá kernel (nhân hệ điều hành) để máy chạy ổn định hơn.
+* [Giả lập bộ nhớ NVRAM](./misc/nvram.md)
+  * Dành cho mấy bạn có NVRAM (Bộ nhớ truy cập ngẫu nhiên không mất dữ liệu khi bị cắt nguồn điện) bị hư (thường gặp trên mấy cái Mainboard Intel chipset dòng 300), hoặc cần test thử xem nó có chạy không.
 
-### GPU Patching
+### Vá lỗi Card màn hình
 
-* [In-depth GPU patching](./gpu-patching/README.md)
+* [Vá lỗi card màn hình chuyên sâu](./gpu-patching/README.md)
+  * Phần này là phần vá lỗi chuyên sâu dành cho bạn đọc đã đi theo hướng dẫn cấu hình framebuffer dành cho thế hệ CPU của mình, tuy nhiên vẫn không vào được giao diện cài đặt của macOS.

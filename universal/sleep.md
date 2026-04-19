@@ -1,43 +1,43 @@
-# Fixing Sleep
+# Sửa chế độ ngủ không hoạt động
 
-So to understand how to fix sleep issues in macOS, we need to first look at what contributes to sleep issues most of the time:
+Để bắt bệnh "mất ngủ cấp tính" trên macOS, trước tiên chúng ta cần ngó qua xem cái gì thường gây ra tình trạng này:
 
-* Incorrectly managed devices(most commonly PCIe based devices)
+* Các thiết bị không được quản lý đúng cách - thường là thiết bị PCIe
 
-The reason for this is when devices get an S3 call(or S0 for wake), the driver needs to power down the devices and put into a low state mode(vice versa when waking). Problems arise when such devices don't cooperate with the drivers and the main offenders of these issues are:
+Lý do là khi các thiết bị nhận được lệnh S3 (lệnh đi ngủ) hoặc S0 (lệnh thức dậy), trình điều khiển (driver) cần phải ngắt điện thiết bị hoặc đưa nó vào chế độ năng lượng thấp (và thực hiện thao tác ngược lại khi thức dậy). Vấn đề nảy sinh khi mấy thiết bị này "chống đối" driver, không chịu hợp tác. Mấy ông thần hay gây rối nhất là:
 
-* USB Controllers and Devices
-* GPUs
-* Thunderbolt Controllers and Devices
-* NICs(Both Ethernet and Wifi)
-* NVMe Drives
+* Bộ điều khiển và các thiết bị USB đang cắm vào cổng
+* Card màn hình (thường là do không có driver điều khiển nó hoặc driver điều khiển không chính xác)
+* Bộ điều khiển và các thiết bị Thunderbolt đang cắm vào cổng
+* NICs (Card mạng - Cả mạng dây LAN và không dây Wi-Fi)
+* Ổ cứng SSD NVMe
 
-And there are others that can cause sleep issues that aren't directly(or obviously) related to PCI/e:
+Và còn vài thứ khác cũng gây tình trạng máy bị mất ngủ mà không liên quan trực tiếp (hoặc rõ ràng) đến PCI/e:
 
-* CPU Power Management
-* Displays
-* NVRAM
-* RTC/System Clocks
-* IRQ Conflicts
-* Audio
-* SMBus
-* TSC
+* CPU chưa kích hoạt tính năng Điều phối điện năng 
+* Màn hình
+* Bộ nhớ NVRAM
+* RTC/Đồng hồ hệ thống
+* Xung đột IRQ
+* Card/codec giải mã âm thanh
+* SMBus chưa được kích hoạt
+* Chưa vá TSC
 
-And something many people forget are over and under-clocks:
+Và một thứ mà nhiều người quên béng đi là việc ép xung (overclock) hoặc hạ xung (underclock):
 
-* CPUs
-  * AVX often breaks iGPUs and hurt overall stability
-* Bad RAM(Both overclocks and mismatched RAM)
-  * Even bad/mismatched timings can cause serious issues
-* Factory GPU Overclocks
-  * OEMs commonly push a card a bit too far with their custom VBIOS
-  * Generally these cards will have a physical switch, allowing you to choose a low power VBIOS
+* CPU
+  * AVX thường làm iGPU chạy không bình thường và ảnh hưởng đến độ ổn định chung của hệ điều hành.
+* Xài trúng RAM đểu hoặc giữa các thanh RAM không đồng bộ về xung nhịp
+  * Ngay cả khi chỉnh timing (độ trễ) sai hoặc không khớp cũng gây lỗi nghiêm trọng.
+* Mấy cái loại card màn hình được nhà sản xuất ép xung sẵn
+  * Mấy ông OEM thường thích đẩy xung nhịp của card lên quá đà bằng VBIOS do họ tùy chỉnh riêng
+  * Thường mấy cái card này sẽ có cái công tắc vật lý, cho phép bạn gạt chuyển sang VBIOS tiết kiệm điện hơn (low power VBIOS)
 
-## Preparations
+## Công tác chuẩn bị
 
-**In macOS**:
+**Trong macOS**:
 
-Before we get in too deep, we'll want to first ready our system:
+Trước khi đi quá sâu, chúng ta cần "làm nóng" hệ thống cái nha:
 
 ```
 sudo pmset autopoweroff 0
@@ -47,242 +47,240 @@ sudo pmset proximitywake 0
 sudo pmset tcpkeepalive 0
 ```
 
-This will do 5 things for us:
+Mấy lệnh này sẽ làm 5 việc cho chúng ta:
 
-1. Disables autopoweroff: This is a form of hibernation
-2. Disables powernap: Used to periodically wake the machine for network, and updates(but not the display)
-3. Disables standby: Used as a time period between sleep and going into hibernation
-4. Disables wake from iPhone/Watch: Specifically when your iPhone or Apple Watch come near, the machine will wake
-5. Disables TCP Keep Alive mechanism to prevent wake ups every 2 hours
+1. Tắt autopoweroff: Đây là một dạng chế độ ngủ đông (hibernation).
+2. Tắt powernap: Sử dụng để định kỳ đánh thức máy để kiểm tra mạng và cập nhật trạng thái các ứng dụng (nhưng không mở màn hình).
+3. Tắt standby: Thời gian chờ của chế độ ngủ thường trước khi chuyển sang ngủ đông.
+4. Tắt đánh thức từ iPhone/Watch: Cụ thể là khi iPhone hoặc Apple Watch của bạn lại gần thì máy sẽ tự dậy.
+5. Tắt cơ chế TCP Keep Alive để ngăn máy tự bật dậy mỗi 2 tiếng để kiểm tra kết nối.
 
-**In your config.plist**:
+**Trong config.plist của bạn**:
 
-While minimal changes are needed, here are the ones we care about:
+Chỉ cần chỉnh tí xíu thôi, đây là mấy cái chúng ta quan tâm:
 
 * `Misc -> Boot -> HibernateMode -> None`
-  * We're gonna avoid the black magic that is S4 for this guide
+  * Chúng ta sẽ né cái "ma thuật hắc ám" S4 (Ngủ đông) trong hướng dẫn này.
 * `NVRAM -> Add -> 7C436110-AB2A-4BBB-A880-FE41995C9F82 -> boot-args`
-  * `keepsyms=1` - Makes sure that if a kernel panic does happen during sleep, that we get all the important bits from it
-  * `swd_panic=1` - Avoids issue where going to sleep results in a reboot, this should instead give us a kernel panic log
+  * `keepsyms=1` - Bảo đảm là nếu có kernel panic (màn hình lỗi) xảy ra khi đưa máy vào chế độ ngủ, chúng ta sẽ xem được các thông tin quan trọng, để xác định chính xác cái gì gây máy ngủm luôn trong khi ngủ.
+  * `swd_panic=1` - Tránh việc máy tự khởi động lại khi gặp lỗi lúc ngủ, thay vào đó nó sẽ hiện log lỗi kernel panic cho mình xem.
 
-**In your BIOS**:
+**Trong BIOS của bạn**:
 
-* Disable:
-  * Wake on LAN
-  * Trusted Platform Module
-    * Note that if you're using BitLocker in Windows, disabling this will result in all your encryption keys being lost. If you're using BitLocker, either disable or note that it may be a cause for wake issues.
-  * Wake on USB(Certain boards may actually require this on to wake, but most will get random wakeup calls with it)
-* Enable:
-  * Wake on Bluetooth(If using a Bluetooth device for waking like a keyboard, otherwise you can disable)
+* Vô hiệu hóa các tính năng sau:
+  * Wake on LAN (Đánh thức qua mạng LAN).
+  * Trusted Platform Module (TPM).
+    * Lưu ý là nếu bạn đang sử dụng BitLocker trên Windows, tắt cái này là mất hết khóa mã hóa đó nha. Nếu xài BitLocker thì một là tắt BitLocker, hai là chấp nhận nó có thể là nguyên nhân gây lỗi máy mất ngủ.
+  * Wake on USB (Một số mainboard bắt buộc phải bật cái này mới đánh thức máy được, nhưng đa số sẽ bị hiện tượng máy tự dậy ngẫu nhiên).
+* Kích hoạt tính năng sau:
+  * Wake on Bluetooth (Nếu bạn xài thiết bị Bluetooth để đánh thức máy như bàn phím, chuột, còn không thì tắt đi cũng được).
   
-## Main culprits
+## Đi xử lý thủ phạm chính
 
-* [USB](#fixing-usb)
-* [GPUs](#fixing-gpus)
-* [Thunderbolt](#fixing-thunderbolt)
-* [NICs](#fixing-nics)
-* [NVMe](#fixing-nvme)
-* [CPU Power Management](#fixing-cpu-power-management)
+* [Sửa lỗi USB gây mất ngủ](#sua-loi-usb-gay-mat-ngu)
+* [Sửa lỗi card màn hình gây mất ngủ](l#sua-loi-card-man-hinh-gay-mat-ngu)
+* [Sửa lỗi Thunderbolt gây mất ngủ](#sua-loi-thunderbolt-gay-mat-ngu)
+* [Sửa card mạng (NICs) gây mất ngủ](#sua-card-mang-nics-gay-mat-ngu)
+* [Sửa ổ cứng NVMe gây mất ngủ](#sua-o-cung-nvme-gay-mat-ngu)
+* [Sửa lỗi điều phối điện năng CPU gây mất ngủ](#sua-loi-đieu-phoi-đien-nang-cpu-gay-mat-ngu)
 
-### Fixing USB
+### Sửa lỗi USB gây mất ngủ
 
-This is the #1 cause of sleep issues on hacks, mainly because Apple's drivers are quite bad at guessing ports and the port limit patches have the ill-effect of creating instability.
+Đây là nguyên nhân số #1 gây ra lỗi mất ngủ trên Hackintosh, do driver của Apple đoán cổng rất tệ (khi mấy cổng USB trên máy bạn không giống như bản đồ USB mà Apple lập trình cứng cho SMBIOS đó) và mấy cái bản vá giới hạn cổng (port limit patches) gây mất ổn định.
 
-* [USB Mapping](../usb/README.md)
+* [Lập sơ đồ USB](../usb/README.md)
 
-This guide also includes some other fixes than just mapping:
+Hướng dẫn này bao gồm cả mấy cách sửa lỗi khác ngoài việc lập sơ đồ cho từng cổng:
 
-* [Fixing USB Power](../usb/misc/power.md)
-* [Fixing Shutdown/Restart](../usb/misc/shutdown.md)
-* [GPRW/UPRW/LANC Instant Wake Patch](../usb/misc/instant-wake.md)
-* [Keyboard Wake Issues](../usb/misc/keyboard.md)
+* [Sửa cấp nguồn USB không đúng điện áp](../usb/misc/power.md)
+* [Sửa lỗi không tắt máy/khởi động lại được](../usb/misc/shutdown.md)
+* [Sửa lỗi dậy tức thì khi mới ngủ (GPRW/UPRW/LANC)](../usb/misc/instant-wake.md)
+* [Sửa lỗi không đánh thức máy được bằng bàn phím](../usb/misc/keyboard.md)
 
-**USB maps with macOS Catalina(10.15) and newer**: You may find that even with USB mapping, your sleep breaks. one possible solution is renaming the IOClass value from `AppleUSBMergeNub` to `AppleUSBHostMergeProperties`. See here for more info: [Changes in Catalina's USB IOClass](https://github.com/dortania/bugtracker/issues/15)
+**Lập sơ đồ USB trên macOS Catalina (10.15) và mới hơn**: Bạn có thể thấy là dù đã map USB rồi nhưng máy vẫn gặp tình trạng mất ngủ mãn tính. Một giải pháp khả thi là đổi tên giá trị IOClass từ `AppleUSBMergeNub` sang `AppleUSBHostMergeProperties`. Xem thêm tại đây: [Changes in Catalina's USB IOClass](https://github.com/dortania/bugtracker/issues/15)
 
-* Note: Some USB devices that do not have proper drivers in macOS can unfortunately result in sleep issues. For example, Corsair water coolers with USB addressable control can prevent the machine from sleeping correctly. For these situations, we recommend users disconnect these troublesome devices when debugging sleep issues.
+* Lưu ý: Một số thiết bị USB không có driver chuẩn trên macOS, thiệt không may cũng có thể gây ra bệnh mất ngủ. Ví dụ, tản nhiệt nước Corsair với cổng điều khiển USB có thể ngăn máy đi ngủ. Với mấy ca này, tụi mình khuyên bạn nên rút mấy thiết bị "khó ở" này ra khi đang debug lỗi ngủ.
 
-### Fixing GPUs
+### Sửa lỗi card màn hình gây mất ngủ
 
-With GPUs, it's fairly easy to know what might be causing issues. This being unsupported GPUs in macOS. By default, any GPU that doesn't have drivers already provided in the OS will run off very basic drivers known as VESA drivers. These provide minimal display output but also cause a big issue in that macOS doesn't actually know how to properly interact with these devices. To fix this, well need to either trick macOS into thinking it's a generic PCIe device(which it can better handle, ideal for desktops) or completely power off the card(on laptops, desktop dGPUs have issues powering down)
+Với card màn hình, khá dễ để xác định chính xác cái gì gây ra lỗi. Đó là mấy cái card màn hình không được hỗ trợ trên macOS. Mặc định, bất kỳ GPU nào không có driver trong hệ điều hành sẽ chạy bằng driver cơ bản kêu là VESA drivers. Mấy cái này chỉ giúp xuất hình cơ bản thôi nhưng gây ra vấn đề lớn là macOS không biết cách tương tác đúng với nó (để tắt/mở nguồn). Để sửa cái này, chúng ta cần lừa macOS nghĩ nó là một thiết bị PCIe chung chung (để macOS xử lý tốt hơn, lý tưởng cho máy bàn) hoặc gạt cầu dao cúp điện hoàn toàn cái card đó (trên laptop, còn card màn hình rời của máy bàn thì khó chơi chiêu cúp cầu dao điện hơn).
 
-* See here for more info:
-  * [Disabling desktop dGPUs](https://dortania.github.io/Getting-Started-With-ACPI/Desktops/desktop-disable)
-  * [Disabling laptop dGPUs](https://dortania.github.io/Getting-Started-With-ACPI/Laptops/laptop-disable)
+* Xem thêm tại đây để biết cách cúp cầu dao điện mấy cái card này:
+  * [Vô hiệu hóa card màn hình không được hỗ trợ trên máy bàn](https://baokhanhwithfriends.github.io/Khoi-dau-voi-ACPI/Desktops/desktop-disable)
+  * [Vô hiệu hóa card màn hình rời không được hỗ trợ (NUC, Laptop và AIO)](https://dortania.github.io/Getting-Started-With-ACPI/Laptops/laptop-disable)
 
-Special notes for iGPU users on 10.15.4 and newer:
+Lưu ý đặc biệt cho bạn đọc xài máy chỉ có iGPU trên bản 10.15.4 và trở về sau:
 
-* iGPU wake is partially broken due to numerous hacks apple uses in AppleGraphicsPowerManagement.kext with real Macs, to get around this you'll likely need `igfxonln=1` to force all displays online. Obviously test first to make sure you have this issue.
-* AAPL,ig-platform-id `07009B3E` may fail for desktop Coffee Lake (UHD 630) users, you can try `00009B3E` instead. `0300923E` is also known to work sometimes.
+* Việc đánh thức card màn hình onboard lúc được lúc không là do hàng tá các thủ thuật mà thằng táo cắn dở sử dụng trong AppleGraphicsPowerManagement.kext trên máy Mac thiệt. Để lách qua cái này bạn có thể cần bổ sung tham số khởi động `igfxonln=1` để ép tất cả màn hình phải online. Dĩ nhiên là phải test xem bạn có bị lỗi này không nha. Nếu không bị thì bạn không cần thêm đâu.
+* Giá trị AAPL,ig-platform-id `07009B3E` có thể bị lỗi với một số máy bàn đời Coffee Lake (UHD 630), do đó bạn có thể thử `00009B3E` để thay thế. Giá trị `0300923E` cũng được ghi nhận là hoạt động trong một số trường hợp.
+Các lưu ý khác về iGPU:
+* Một số máy tính xài iGPU (ví dụ Kaby Lake và Coffee Lake) có thể gặp tình trạng mất ổn định hệ thống khi phần cứng vào chế độ trạng thái sử dụng năng lượng thấp, đôi khi biểu hiện thành lỗi kernel panic NVMe. Để sửa lỗi, bạn có thể bổ sung tham số `forceRenderStandby=0` vào trong boot-args để tắt RC6 Render Standby. Xem thêm tại: [IGP causes NVMe Kernel Panic CSTS=0xffffffff #1193](https://github.com/acidanthera/bugtracker/issues/1193)
+* Một số laptop Ice Lake cũng có thể bị lỗi kernel panic `Cannot allow DC9 without disallowing DC6` do máy tính gặp lỗi khi chuyển trạng thái nguồn điện. Cách giải quyết là bổ sung tham số `-noDC9` hoặc `-nodisplaysleepDC6` vô trong boot-args.
 
-Other iGPU notes:
+Lưu ý đặc biệt với bạn đọc đang xài Màn hình 4K kết nối với card màn hình rời của AMD:
 
-* Some systems with iGPUs (e.g. Kaby Lake and Coffee Lake) may cause system instability in lower power states, and can sometimes manifest as NVMe kernel panics. To resolve, you can add `forceRenderStandby=0` to your boot-args to disable RC6 Render Standby. See here for more info: [IGP causes NVMe Kernel Panic CSTS=0xffffffff #1193](https://github.com/acidanthera/bugtracker/issues/1193)
-* Certain Ice Lake laptops may also kernel panic on `Cannot allow DC9 without disallowing DC6` due to issues with transitioning states. A work around for this is using either `-noDC9` or `-nodisplaysleepDC6` in your boot-args
-
-Special note for 4k Displays with AMD dGPUs:
-
-* Some displays may fail to wake randomly, mainly caused by AGDC preferences. To fix, apply this to your dGPU in DeviceProperties:
+* Một số màn hình có thể không chịu dậy (lỗi này xuất hiện ngẫu nhiên), thường là do các thiết lập AGDC từ Apple. Để sửa lỗi này, bạn bổ sung cái này vào trong đường dẫn PciRoot của card màn hình trong DeviceProperties:
   * `CFG,CFG_USE_AGDC | Data | 00`
-  * You can find the PciRoot of your GPU with [gfxutil](https://github.com/acidanthera/gfxutil/releases)
+  * Bạn có thể tìm PciRoot của GPU bằng [gfxutil](https://github.com/acidanthera/gfxutil/releases)
     * `/path/to/gfxutil -f GFX0`
 
 ![](../images/post-install/sleep-md/agdc.png)
 
-### Fixing Thunderbolt
+### Sửa lỗi Thunderbolt gây mất ngủ
 
-Thunderbolt is a very tricky topic in the community, mainly due to the complexity of the situation. You really have just 2 paths to go down if you want Thunderbolt and sleep to work simultaneously:
+Thunderbolt là một chủ đề cực kỳ "khoai" trong cộng đồng Hackintosh, do độ phức tạp của nó. Bạn thực sự chỉ có 2 con đường để tiếp tục nếu muốn cả Thunderbolt và chế độ ngủ cùng hoạt động:
 
-* Disable Thunderbolt 3 in the BIOS
-* Attempt to patch Thunderbolt 3:
-  * [Thunderbolt 3 Fix](https://osy.gitbook.io/hac-mini-guide/details/thunderbolt-3-fix/)
+* Tắt Thunderbolt 3 trong BIOS.
+* Cố gắng vá cho Thunderbolt 3 chạy được:
+  * [Sửa lỗi Thunderbolt 3](https://osy.gitbook.io/hac-mini-guide/details/thunderbolt-3-fix/)
   * [ThunderboltReset](https://github.com/osy86/ThunderboltReset)
   * [ThunderboltPkg](https://github.com/al3xtjames/ThunderboltPkg/blob/master/Docs/FAQ.md)
 
-Note: Thunderbolt can be enabled without extra work *if* you're ok without sleep, and vice versa.
+Lưu ý: Thunderbolt có thể hoạt động mà không cần làm gì thêm *nếu* bạn chấp nhận không bao giờ sử dụng chế độ ngủ và ngược lại.
 
-### Fixing NICs
+### Sửa card mạng (NICs) gây mất ngủ
 
-NICs(network Interface Controllers) are fairly easy to fix with sleep, it's mainly the following:
+Riêng với NICs (Network Interface Controllers) khá dễ sửa lỗi mất ngủ, nguyên nhân chính là do mấy cái sau:
 
-* Disable `WakeOnLAN` in the BIOS
-  * Most systems will enter a sleep/wake loop with this enabled
-* Disable `Wake for network access` in macOS(SystemPreferences -> Power)
-  * Seems to break on a lot of hacks
+* Vô hiệu hóa tính năng `WakeOnLAN` có trong BIOS
+  * Đa số máy tính sẽ rơi vào vòng lặp ngủ/thức (sleep/wake loop) nếu mở cái này.
+* Vô hiệu hóa `Wake for network access` (Tự động thức dậy khi có kết nối mạng) trong macOS (SystemPreferences -> Power)
+  * Cái tính năng này có vẻ gây lỗi trên rất nhiều máy Hackintosh.
   
-### Fixing NVMe
+### Sửa ổ cứng NVMe gây mất ngủ
 
-So macOS can be quite picky when it comes to NVMe drives, and there's also the issue that Apple's power management drivers are limited to Apple branded drives only. So the main things to do are:
+macOS khá là "kén cá chọn canh" khi nói đến ổ NVMe, đặc biệt vấn đề chính là driver quản lý điện năng của Apple chỉ hỗ trợ ổ cứng "chính chủ" Apple thôi. Nên những việc chính cần làm là:
 
-* Make sure the NVMe is on the latest firmware(especially important for [970 Evo Plus drives](https://www.tonymacx86.com/threads/do-the-samsung-970-evo-plus-drives-work-new-firmware-available-2b2qexm7.270757/page-14#post-1960453))
-* Use [NVMeFix.kext](https://github.com/acidanthera/NVMeFix/releases) to allow for proper NVMe power management
+* Bảo đảm ổ cứng NVMe đang chạy firmware (vi chương trình) mới nhất (đặc biệt quan trọng với [ổ 970 Evo Plus](https://www.tonymacx86.com/threads/do-the-samsung-970-evo-plus-drives-work-new-firmware-available-2b2qexm7.270757/page-14#post-1960453))
+* Sử dụng [NVMeFix.kext](https://github.com/acidanthera/NVMeFix/releases) để giúp macOS điều phối điện năng cho ổ cứng NVMe không phải thương hiệu Apple chuẩn hơn.
 
-And avoid problematic drives, the main culprits:
+Và tránh xa các ổ cứng có tiền sử "bất hảo", mấy gương mặt tiêu biểu là:
 
-* Samsung's PM981 and PM991 SSDs
-* Micron's 2200S
+* SSD Samsung PM981 và PM991
+* SSD Micron 2200S
 
-If you however do have these drives in your system, it's best to disable them via an SSDT: [Disabling desktop dGPUs](https://dortania.github.io/Getting-Started-With-ACPI/Desktops/desktop-disable.html).
-This guide is primarily for dGPU but works the exact same way with NVMe drives(as they're both just PCIe devices)
+Nếu lỡ mua mấy ổ này rồi, tốt nhất là bạn nên vô hiệu hóa nó bằng SSDT: [Vô hiệu hóa card màn hình không được hỗ trợ trên máy bàn](https://baokhanhwithfriends.github.io/Khoi-dau-voi-ACPI/Desktops/desktop-disable).
+Hướng dẫn này được viết cho card màn hình rời trên máy bàn nhưng bạn có thể áp dụng y chang cho ổ NVMe (vì cả hai đều là thiết bị PCIe).
   
-### Fixing CPU Power Management
+### Sửa lỗi Điều phối điện năng CPU gây mất ngủ
 
-**For Intel**:
+**Với Intel**:
 
-To verify you have working CPU Power Management, see the [Fixing Power Management](../universal/pm.md) page.
+Để kiểm tra xem Điều phối điện năng CPU có hoạt động không, đọc trang [Sửa lỗi điều phối điện năng nâng cao](../universal/pm.md).
 
-Also note that incorrect power management data can result in wake issues, so verify that you're using the correct SMBIOS.
+Cũng lưu ý là dữ liệu điều phối điện năng sai lệch với đời CPU của máy cũng có thể gây lỗi khi máy cố gắng thức dậy, nên hãy kiểm tra xem bạn đang dùng đúng SMBIOS với đời máy chưa nhé.
 
-A common kernel panic from wake would be:
+Lỗi kernel panic phổ biến khi đánh thức máy là:
 
 ```
 Sleep Wake failure in EFI
 ```
 
-**For AMD**:
+**Với AMD**:
 
-Fret not, for their is still hope for you as well! [AMDRyzenCPUPowerManagement.kext](https://github.com/trulyspinach/SMCAMDProcessor) can add power management to Ryzen based CPUs. Installation and usage is explained on the repo's README.md
+Đừng lo, vẫn còn tia hy vọng cho các bạn! [AMDRyzenCPUPowerManagement.kext](https://github.com/trulyspinach/SMCAMDProcessor) có thể bổ sung thêm khả năng điều phối điện năng cho các CPU Ryzen. Cách cài đặt và sử dụng có trong file README.md của repo đó.
 
-## Other Culprits
+## Các thủ phạm khác
 
-* [Displays](#displays)
-* [NVRAM](#nvram)
-* [RTC](#rtc)
-* [IRQ Conflicts](#irq-conflicts)
-* [Audio](#audio)
-* [SMBus](#smbus)
-* [TSC](#tsc)
+* [Sửa lỗi cảm biến phát hiện gập màn hình gây mất ngủ](#sua-loi-cam-bien-phat-hien-gap-man-hinh-gay-mat-ngu)
+* [Sửa lỗi NVRAM gây mất ngủ](#sua-loi-nvram-gay-mat-ngu)
+* [Sửa lỗi RTC gây mất ngủ](#sua-loi-rtc-gay-mat-ngu)
+* [Sửa lỗi xung đột IRQ gây mất ngủ](#sua-loi-xung-đot-irq-gay-mat-ngu)
+* [Sửa lỗi card/codec giải mã âm thanh gây mất ngủ](#sua-loi-card-codec-giai-ma-am-thanh-gay-mat-ngu)
+* [Sửa lỗi SMBus chưa được nhận diện gây mất ngủ](l#sua-loi-smbus-chua-đuoc-nhan-dien-gay-mat-ngu)
+* [Sửa lỗi TSC gây mất ngủ](#sua-loi-tsc-gay-mat-ngu)
 
-### Displays
+### Sửa lỗi cảm biến phát hiện gập màn hình gây mất ngủ
 
-So display issues are mainly for laptop lid detection, specifically:
+Vấn đề về gập màn hình mà máy mất ngủ liên quan đến cảm biến phát hiện gập màn hình laptop (lid detection), cụ thể là:
 
-* Incorrectly made SSDT-PNLF
-* OS vs firmware lid wake
-* Keyboard spams from lid waking it(On PS2 based keyboards)
+* Bạn đã tạo SSDT-PNLF không chính xác với máy của mình.
+* Xung đột giữa việc hệ điều hành và firmware xử lý việc gập máy.
+* Bàn phím tự spam nút liên tục khi mở máy (Trên bàn phím chuẩn PS/2).
 
-The former is quite easy to fix, see here: [Backlight PNLF](https://dortania.github.io/Getting-Started-With-ACPI/)
+Cái đầu tiên khá dễ sửa, đọc tại đây: [Sửa lỗi không chỉnh được độ sáng màn hình PNLF](https://baokhanhwithfriends.github.io/Khoi-dau-voi-ACPI/Laptops/backlight.html)
 
-For the middle, macOS's lid wake detection can bit a bit broken and you may need to outright disable it:
+Cái ở giữa, khả năng phát hiện giở màn hình của macOS hơi bị "ngáo" và bạn có thể cần tắt hẳn nó đi:
 
 ```sh
 sudo pmset lidwake 0
 ```
 
-And set `lidwake 1` to re-enable it.
+Và set `lidwake 1` để kích hoạt lại.
 
-The latter requires a bit more work. What we'll be doing is trying to nullify semi random key spams that happen on Skylake and newer based HPs though pop up in other OEMs as well. This will also assume that your keyboard is PS2 based and are running [VoodooPS2](https://github.com/acidanthera/VoodooPS2/releases).
+Cái cuối cùng cần làm nhiều việc hơn chút. Chúng ta sẽ cố gắng ngăn chặn chuyện spam phím ngẫu nhiên xảy ra trên các máy HP sử dụng CPU đời Skylake và mới hơn (mặc dù các hãng khác cũng bị). Cái này giả định bàn phím của bạn là chuẩn PS/2 và đang chạy [VoodooPS2](https://github.com/acidanthera/VoodooPS2/releases).
 
-To fix this, grab [SSDT-HP-FixLidSleep.dsl](https://github.com/acidanthera/VoodooPS2/blob/master/Docs/ACPI/SSDT-HP-FixLidSleep.dsl) and adapt the ACPI pathing to your keyboard(`_CID` value being `PNP0303`). Once this is done, compile and drop into both EFI/OC/ACPI and under config.plist -> ACPI -> Add.
+Để sửa lỗi chết tiệt này, tải [SSDT-HP-FixLidSleep.dsl](https://github.com/acidanthera/VoodooPS2/blob/master/Docs/ACPI/SSDT-HP-FixLidSleep.dsl) về và chỉnh lại đường dẫn ACPI cho khớp với bàn phím của bạn (giá trị `_CID` là `PNP0303`). Xong xuôi thì biên dịch và thả vào cả EFI/OC/ACPI và dưới mục config.plist -> ACPI -> Add.
 
-For 99% of HP users, this will fix the random key spam. If not, see below threads:
+Với 99% bạn đọc đang xài máy HP, cái này sẽ sửa được lỗi spam phím. Nếu không, xem các bài thảo luận dưới đây:
 
 * [RehabMan's brightness key guide](https://www.tonymacx86.com/threads/guide-patching-dsdt-ssdt-for-laptop-backlight-control.152659/)
 
-### NVRAM
+### Sửa lỗi NVRAM gây mất ngủ
 
-To verify you have working NVRAM, see the [Emulated NVRAM](../misc/nvram.md) page to verify you have working NVRAM. And if not, then patch accordingly.
+Để kiểm tra xem bộ nhớ NVRAM hoạt động không, đọc trang [Giả lập bộ nhớ NVRAM](../misc/nvram.md) để kiểm tra xem NVRAM có chạy không. Nếu không thì vá lỗi tương ứng là được.
 
-### RTC
+### Sửa lỗi RTC gây mất ngủ
 
-This is mainly relevant for Intel 300 series motherboards(Z3xx), specifically that there's 2 issues:
+Cái này liên quan đến bo mạch chủ Intel 300 series (Z3xx), cụ thể là có 2 vấn đề với dòng series chipset này:
 
-* Be default the RTC is disabled(instead using AWAC)
-* The RTC is usually not compatible with macOS
+* Mặc định RTC bị tắt (thay vào đó dùng AWAC).
+* Nếu có RTC thì nó được lập trình theo cách không tương thích với macOS.
 
-To get around the first issue, see here: [Fixing AWAC](https://dortania.github.io/Getting-Started-With-ACPI/Universal/awac.html)
+Để giải quyết vấn đề đầu tiên, xem tại đây: [Sửa đồng hồ hệ thống không tương tích](https://dortania.github.io/Getting-Started-With-ACPI/Universal/awac.html)
 
-For the second one, it's quite easy to tell you have RTC issues when you either shutdown or restart. Specifically you'll be greeted with a "BIOS Restarted in Safemode" error. To fix this, we'll need to prevent macOS from writing to the RTC regions causing these issues. There are a couple fixes:
+Vấn đề thứ hai, rất dễ nhận biết lỗi RTC khi bạn tắt máy hoặc khởi động lại. Cụ thể là bạn sẽ được chào đón bằng thông báo lỗi "BIOS Restarted in Safemode" (BIOS khởi động lại ở chế độ an toàn). Để sửa, chúng ta cần ngăn macOS ghi vào các vùng RTC gây lỗi. Có vài cách sửa:
 
-* DisableRtcChecksum: Prevent writing to primary checksum (0x58-0x59), works with most boards
+* DisableRtcChecksum: Ngăn ghi vào checksum chính (0x58-0x59), cái này sẽ khắc phục được với hầu hết các bo mạch.
 * `UEFI -> ProtoclOverride -> AppleRtcRam` + `NVRAM -> Add -> rtc-blacklist`
-  * Blacklists certain regions at the firmware level, see [Configuration.pdf](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Configuration.pdf) for more info on how to set this up
+  * Đưa các vùng nhất định vào danh sách đen ở cấp độ firmware, đọc [Configuration.pdf](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Configuration.pdf) để biết thêm chi tiết.
 * [RTCMemoryFixup](https://github.com/acidanthera/RTCMemoryFixup) + `rtcfx_exclude=`
-  * Blacklists certain regions at the kernel level, see README for more info on how to setup
+  * Đưa các vùng vào danh sách đen ở cấp độ kernel, xem README để biết cách làm.
 
-With some legacy boards, you may actually need to patch your RTC: [Z68 RTC](https://www.insanelymac.com/forum/topic/329624-need-cmos-reset-after-sleep-only-after-login/)
+Với một số bo mạch chủ đời cũ (legacy), bạn có thể cần vá RTC: [Z68 RTC](https://www.insanelymac.com/forum/topic/329624-need-cmos-reset-after-sleep-only-after-login/)
 
-### IRQ Conflicts
+### Sửa lỗi xung đột IRQ gây mất ngủ
 
-IRQ issues usually occur during bootups but some may notice that IRQ calls can break with sleep, this fix is fairly easy:
+Lỗi IRQ thường xảy ra khi khởi động nhưng một số người cũng thấy IRQ gây lỗi ngủ, cách sửa khá dễ:
 
 * [SSDTTime](https://github.com/corpnewt/SSDTTime)
-  * First dump your DSDT in Linux/Windows
-  * then select `FixHPET` option
+  * Đầu tiên dump DSDT của bạn trong Linux/Windows.
+  * Sau đó chọn tùy chọn `FixHPET`
 
-This will provide you with both SSDT-HPET.aml and `patches_OC.plist`, You will want to add the SSDT to EFI/OC/ACPI and add the ACPI patches into your config.plist from the patches_OC.plist
+Nó sẽ cung cấp cho bạn cả `SSDT-HPET.aml` và `patches_OC.plist`, bạn thêm SSDT vào EFI/OC/ACPI và thêm các bản vá ACPI vào config.plist từ file patches_OC.plist.
 
-### Audio
+### Sửa lỗi card/codec giải mã âm thanh gây mất ngủ
 
-Unmanaged or incorrectly managed audio devices can also cause issues, either disable unused audio devices  in your BIOS or verify they're working correctly here:
+Các thiết bị âm thanh không được macOS quản lý hoặc quản lý sai cách cũng gây chuyện, hãy vô hiệu hoá các thiết bị âm thanh không sử dụng trong BIOS hoặc kiểm tra xem tụi nó hoạt động đúng cách chưa tại đây:
 
-* [Fixing Audio](../universal/audio.md)
+* [Sửa máy không có tiếng bằng AppleALC](../universal/audio.md)
 
-### SMBus
+### Sửa lỗi SMBus chưa được nhận diện gây mất ngủ
 
-Main reason you'd care about SMBus is AppleSMBus can help properly manage both SMBus and PCI devices like with power states. Problem is the kext usually won't load by itself, so you'll need to actually create the SSDT-SMBS-MCHC.
+Lý do chính bạn quan tâm đến SMBus là driver AppleSMBus của macOS có thể giúp quản lý và điều khiển chính xác SMBus và thiết bị PCI như các lệnh điều khiển trạng thái sử dụng năng lượng. Vấn đề là kext này thường không tự load, nên bạn cần tạo SSDT-SMBS-MCHC.
 
-See here on more info on how to make it: [Fixing SMBus support](https://dortania.github.io/Getting-Started-With-ACPI/Universal/smbus.html)
+Xem tại đây để biết cách làm: [Sửa lỗi SMBus chưa được nhận diện](https://baokhanhwithfriends.github.io/Khoi-dau-voi-ACPI/Universal/smbus.html)
 
-### TSC
+### Sửa lỗi TSC gây mất ngủ
 
-The TSC(Time Stamp Counter) is responsible for making sure you're hardware is running at the correct speed, problem is some firmware(mainly HEDT/Server and Asus Laptops) will not write the TSC to all cores causing issues. To get around this, we have 3 options:
+TSC (hay viết tắt của Time Stamp Counter - dịch ra là Bộ đếm thời gian) là thành phần chịu trách nhiệm bảo đảm phần cứng của bạn chạy đúng tốc độ, vấn đề là một số firmware (đa phần là máy trạm/máy chủ và Laptop Asus) sẽ không ghi TSC đồng bộ lên tất cả các nhân (core) gây ra lỗi. Để giải quyết, chúng ta có 3 lựa chọn:
 
 * [CpuTscSync](https://github.com/lvs1974/CpuTscSync/releases)
-  * For troublesome laptops
+  * Dành cho mấy con laptop "khó ở". Thường là laptop Asus cần kext này
 * [VoodooTSCSync](https://bitbucket.org/RehabMan/VoodooTSCSync/downloads/)
-  * For most HEDT hardware
+  * Dành cho hầu hết phần cứng HEDT (máy trạm).
 * [TSCAdjustReset](https://github.com/interferenc/TSCAdjustReset)
-  * For Skylake X/W/SP and Cascade Lake X/W/SP hardware
+  * Dành cho phần cứng Skylake X/W/SP và Cascade Lake X/W/SP.
   
-The former 2 are plug n play, while the latter will need some customizations:
+Hai cái đầu là plug and play (cắm là chạy), còn cái cuối cần chỉnh chọt chút cho phù hợp với phần cứng máy của bạn:
 
-* Open up the kext(ShowPackageContents in finder, `Contents -> Info.plist`) and change the Info.plist -> `IOKitPersonalities -> IOPropertyMatch -> IOCPUNumber` to the number of CPU threads you have starting from `0`(i9 7980xe 18 core would be `35` as it has 36 threads total)
-* Compiled version can be found here: [TSCAdjustReset.kext](https://github.com/dortania/OpenCore-Install-Guide/blob/master/extra-files/TSCAdjustReset.kext.zip)
+* Mở kext ra (ShowPackageContents trong Finder, `Contents -> Info.plist`) và đổi Info.plist -> `IOKitPersonalities -> IOPropertyMatch -> IOCPUNumber` thành số luồng (thread) CPU bạn có, bắt đầu từ `0` (Ví dụ i9 7980xe 18 nhân thì sẽ là `35` vì nó có tổng 36 luồng). Lưu ý cho mình máy tính luôn đếm từ 0 chứ không phải 1 nhé.
+* Bản biên dịch sẵn ở đây: [TSCAdjustReset.kext](https://github.com/dortania/OpenCore-Install-Guide/blob/master/extra-files/TSCAdjustReset.kext.zip)
 
 ![](../images/post-install/sleep-md/tsc.png)
 
-The most common way to see the TSC issue:
+Cách phổ biến nhất để nhận biết lỗi TSC:
 
-Case 1    |  Case 2
+Trường hợp số 1    |  Trường hợp số 2
 :-------------------------:|:-------------------------:
 ![](../images/troubleshooting/troubleshooting-md/asus-tsc.png)  |  ![](../images/troubleshooting/troubleshooting-md/asus-tsc-2.png)

@@ -1,10 +1,10 @@
-# Patching VRAM
+# Vá bộ nhớ VRAM được yêu cầu
 
-This section is mainly relevant for users who cannot unlock their BIOS to increase the allocated VRAM for their iGPU which results in a kernel panic in macOS. To work around this, we'll first want to identify the minimum amount of VRAM required for the framebuffer and then patch it to require less.
+Phần này dành cho mấy bác có máy tính không cho mở khóa (unlock) BIOS để tăng lượng VRAM cấp phát cho iGPU, dẫn đến việc ăn ngay cái lỗi kernel panic (màn hình chết) khi vào macOS. Để lách qua vụ này, trước tiên chúng ta cần xác định lượng VRAM tối thiểu mà framebuffer yêu cầu, sau đó vá lại để bắt nó yêu cầu ít hơn, dễ hiểu hơn là bắt driver của Apple phải chạy với lượng bộ nhớ cố định mà BIOS cấp phát, cấm đòi hỏi thêm, tự xin thêm từ RAM.
 
-For this example, let's take a Haswell Lake Framebuffer that's commonly used on desktop Haswell iGPUs: `0x0D220003`(`0300220D` when hex swapped)
+Ví dụ, lấy một cái Framebuffer Haswell Lake thường được sử dụng trên máy bàn có iGPU Haswell: `0x0D220003`(`0300220D` khi đã đảo hex)
 
-Now let's take a look at the corresponding information in [WhateverGreen's manual](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md)(note you'll need to click "Spoiler: Azul connectors")
+Giờ hãy nghía qua thông tin tương ứng trong [Hướng dẫn sử dụng WhateverGreen](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md)(lưu ý là bạn phải bấm vào "Spoiler: Azul connectors")
 
 ```
 ID: 0D220003, STOLEN: 32 MB, FBMEM: 19 MB, VRAM: 1536 MB, Flags: 0x00000402
@@ -19,61 +19,61 @@ Mobile: 0, PipeCount: 3, PortCount: 3, FBMemoryCount: 3
 03060800 00040000 11000000
 ```
 
-Here what matters is the first 2 lines:
+Ở đây cái quan trọng là 2 dòng đầu:
 
 ```
 ID: 0D220003, STOLEN: 32 MB, FBMEM: 19 MB, VRAM: 1536 MB, Flags: 0x00000402
 TOTAL STOLEN: 52 MB, TOTAL CURSOR: 1 MB (1572864 bytes), MAX STOLEN: 116 MB, MAX OVERALL: 117 MB (123219968 bytes)
 ```
 
-Here the main entries we care about:
+Mấy mục chính chúng ta quan tâm đây:
 
-| Entry | Value | Comment |
+| Entry (Mục) | Value (Giá trị) | Comment (Ghi chú) |
 | :--- | :--- | :--- |
-| STOLEN | 32MB | Memory reserved for the iGPU |
-| FBMEM | 19MB | Memory reserved for the framebuffer |
-| TOTAL CURSOR | 1 MB | Memory reserved for cursor |
-| TOTAL STOLEN | 52 MB | Combination of the above |
+| STOLEN | 32MB | Bộ nhớ dành riêng cho iGPU |
+| FBMEM | 19MB | Bộ nhớ dành riêng cho framebuffer |
+| TOTAL CURSOR | 1 MB | Bộ nhớ dành riêng cho con trỏ chuột |
+| TOTAL STOLEN | 52 MB | Tổng hợp của mấy cái trên cộng lại |
 
-Now let's say for example your motherboard only allocates 32MB for the iGPU, this will be too little for what the framebuffer expects and so will most likely kernel panic when it tries to write into an area of memory that does not exist.
+Giờ giả dụ mainboard của bạn "keo kiệt" chỉ cấp 32MB cho iGPU, con số này quá ít so với những gì framebuffer yêu cầu. Vậy là khả năng cao bạn sẽ bị kernel panic khi hệ thống cố ghi vào một vùng bộ nhớ không tồn tại (không được cấp phát!).
 
-That's where WhateverGreen's patching capabilities come in, here we're able to set the exact amount of iGPU memory the framebuffer expects with the following properties:
+Đó là lúc khả năng vá lỗi thần thánh của WhateverGreen phát huy tác dụng, ở đây chúng ta có thể thiết lập chính xác lượng bộ nhớ iGPU mà framebuffer yêu cầu bằng các thuộc tính sau:
 
-| Value | Comment |
+| Value (Giá trị) | Comment (Ghi chú) |
 | :--- | :--- |
-| framebuffer-patch-enable | This enables WhateverGreen's patching capabilities |
-| framebuffer-stolenmem | This sets the value used by `STOLEN` entry |
-| framebuffer-fbmem | This sets the value used by `FBMEM` entry |
+| framebuffer-patch-enable | Cái này kích hoạt khả năng vá lỗi của WhateverGreen |
+| framebuffer-stolenmem | Cái này thiết lập giá trị xài cho mục `STOLEN` |
+| framebuffer-fbmem | Cái này thiết lập giá trị xài cho mục `FBMEM` |
 
-## Creating our patch
+## Tạo bản vá riêng cho máy bạn
 
-So to lower this VRAM requirement, we'll want to set `STOLEN` to 19MB and `FBMEM` to 9MB. This will get us underneath the 32MB limit.
+Để hạ thấp yêu cầu VRAM xuống, chúng ta sẽ muốn set `STOLEN` thành 19MB và `FBMEM` thành 9MB. Tổng cộng lại sẽ giúp chúng ta lọt xuống dưới mức giới hạn 32MB.
 
-To do this, we run the following commands to covert 9MB:
+Để làm việc này, chúng ta chạy mấy lệnh sau để chuyển đổi 9MB:
 
 ```md
-# Convert 9MB Megabytes to Bytes
+# Chuyển đổi đơn vị 9MB Megabytes sang Bytes
 echo '9 * 1024 * 1024' | bc
  9437184
 
-# Convert from decimal to hexadecimal
+# Chuyển từ thập phân sang thập lục phân (hexadecimal)
 echo 'obase=16; ibase=10; 9437184' | bc
  900000
 
-# Hexswap so it can be injected correctly
-# ie. swap in pairs
+# Đảo ngược Hex (Hexswap) để nó có thể được nạp đúng cách
+# tức là: đảo theo từng cặp
 900000 -> 90 00 00 -> 00 00 90
 
-# Pad the value to 4 bytes with 00 at the end
+# Đệm thêm số 0 vào cuối cho đủ 4 byte
 00 00 90 00
 ```
 
-And when we do this for both value, we get:
+Và khi chúng ta làm thế cho cả hai giá trị, ta được:
 
 * 19MB = `00 00 30 01`
 * 9MB = `00 00 90 00`
 
-And when we punch it into our WhateverGreen properties:
+Và khi nhét nó vào các thuộc tính của WhateverGreen:
 
 | Key | Type | Value
 | :--- | :--- | :--- |
@@ -81,10 +81,10 @@ And when we punch it into our WhateverGreen properties:
 | framebuffer-stolenmem | Data | 00003001 |
 | framebuffer-fbmem | Data | 00009000 |
 
-* For `patch-enable`, 01000000 simply refers to being enabled
+* Với `patch-enable`, 01000000 đơn giản có nghĩa là thông báo cho macOS biết cổng này có kích hoạt (Enabled).
 
-## Applying our patch
+## Áp dụng bản vá
 
-Now with our patch made, head into your config.plist then under `DeviceProperties -> Add -> PciRoot(0x0)/Pci(0x2,0x0)` and add the properties:
+Giờ có bản vá trong tay rồi, vào `DeviceProperties -> Add -> PciRoot(0x0)/Pci(0x2,0x0)` và bổ sung thêm các thuộc tính vào:
 
 ![](../../images/gpu-patching/vram.png)

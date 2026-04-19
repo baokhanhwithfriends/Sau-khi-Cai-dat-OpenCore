@@ -1,172 +1,172 @@
-# Legacy Nvidia Patching
+# Vá lỗi cho card màn hình Nvidia đời cũ
 
-* Please note this page is more of an info dump, we won't be going to too great of detail on setup though we plan to expand this page more for it.
+* Xin lưu ý trang này giống như một cái kho chứa thông tin thô hơn, tụi mình sẽ không đi quá sâu vào chi tiết thiết lập mặc dù có kế hoạch mở rộng trang này sau này.
 
-With legacy Nvidia GPUs, macOS has difficulties enabling acceleration due to many missing properties. To work around this, we can inject properties into IOService for macOS to easily interpret.
+Với mấy cái GPU Nvidia đời cũ (Legacy), macOS gặp khó khăn trong việc kích hoạt tăng tốc phần cứng (acceleration) do thiếu nhiều thuộc tính. Để lách qua cái này, chúng ta có thể nạp (inject) các thuộc tính vào IOService để macOS dễ dàng hiểu được.
 
-To start off, we'll be assuming the following:
+Để bắt đầu, chúng ta giả định những điều sau phải được đáp ứng:
 
-* macOS has already been installed in some way
-  * We need macOS installed to determine certain properties
-* Your GPU is either Fermi or older
-  * Kepler and newer **do not** need Device Property injection
-* Lilu and WhateverGreen are loaded
-  * verify by running `kextstat | grep -E "Lilu|WhateverGreen"`
+* macOS đã được cài đặt theo cách nào đó.
+  * Chúng ta cần cài macOS rồi mới xác định được một số thuộc tính nhất định
+* GPU của bạn thuộc dòng Fermi hoặc cũ hơn.
+  * Kiến trúc Kepler và mới hơn **không nên và càng không cần** nạp Thuộc tính Thiết bị (Device Property) kiểu này.
+* Lilu and WhateverGreen đã được nạp.
+  * Kiểm tra chạy chưa bằng lệnh `kextstat | grep -E "Lilu|WhateverGreen"`
   
-### Finding the GPU pathing
+### Tìm đường dẫn GPU
 
-First lets grab [gfxutil](https://github.com/acidanthera/gfxutil/releases) and run the following:
+Đầu tiên lôi cổ [gfxutil](https://github.com/acidanthera/gfxutil/releases) ra và chạy lệnh sau:
 
 ```
-path/to/gfxutil -f display
+đường/dẫn/tới/gfxutil -f display
 ```
 
-This should spit out something like the following:
+Nó sẽ nhả ra một dòng dạng như vầy:
 
 ```
 67:00.0 10DE:0A20 /PC02@0/BR2A@0/GFX0@0/ = PciRoot(0x2)/Pci(0x0,0x0)/Pci(0x0,0x0)
 ```
 
-What we care about is the PciRoot section, as this is where our GPU is located and where we'll be injecting our properties:
+Cái chúng ta quan tâm là phần PciRoot, vì đây là nơi GPU của chúng ta tọa lạc và là nơi chúng ta sẽ bơm thuộc tính vào:
 
 ```
 PciRoot(0x2)/Pci(0x0,0x0)/Pci(0x0,0x0)
 ```
 
-### Building our DeviceProperties
+### Xây dựng DeviceProperties
 
-With Nvidia GPUs, there's actually not too many properties required for setup. The main ones that are recommended are the following:
+Với card màn hình Nvidia, thực ra không cần bổ sung quá nhiều thuộc tính để thiết lập đâu. Mấy cái chính được khuyến nghị phải thêm là:
 
-| Property | Value | Comment |
+| Property (Thuộc tính) | Value (Giá trị) | Comment (Ghi chú) |
 | :--- | :--- | :--- |
-| model | ex. GeForce GT 220 | GPU model name, cosmetic |
-| device_type | NVDA,Parent | Always set as `NVDA,Parent` |
-| VRAM,totalsize | ex. 0000004000000000 | Sets VRAM size |
-| rom-revision | Dortania | Property must exist, however the value can be anything |
-| NVCAP | ex. 0500000000000F00000000000000000F00000000 | sets display properties used by macOS, more info below |
-| @0,compatible | NVDA,NVMac | Always set as `NVDA,NVMac` |
-| @0,device_type | display | Always set as `display` |
-| @0,name | NVDA,Display-A | Always set as `NVDA,Display-A` |
-| @1,compatible | NVDA,NVMac | Always set as `NVDA,NVMac` |
-| @1,device_type | display | Always set as `display` |
-| @1,name | NVDA,Display-B | Always set as `NVDA,Display-B` |
+| model | VD: GeForce GT 220 | Tên model card màn hình, để làm màu là chính |
+| device_type | NVDA,Parent | Luôn đặt là `NVDA,Parent` |
+| VRAM,totalsize | VD: 0000004000000000 | Cái này thiết lập dung lượng VRAM |
+| rom-revision | Dortania | Thuộc tính này bắt buộc phải có, nhưng bạn muốn để giá trị là gì cũng được |
+| NVCAP | VD: 0500000000000F00000000000000000F00000000 | Thiết lập thuộc tính hiển thị xài bởi macOS, xem thêm bên dưới |
+| @0,compatible | NVDA,NVMac | Luôn đặt là `NVDA,NVMac` |
+| @0,device_type | display | Luôn đặt là `display` |
+| @0,name | NVDA,Display-A | Luôn đặt là `NVDA,Display-A` |
+| @1,compatible | NVDA,NVMac | Luôn đặt là `NVDA,NVMac` |
+| @1,device_type | display | Luôn đặt là `display` |
+| @1,name | NVDA,Display-B | Luôn đặt là `NVDA,Display-B` |
 
-And to calculate the properties few properties:
+Và giờ đi tính toán vài thuộc tính cụ thể:
 
-* [model](#model)
-* [VRAM,totalsize](#vram-totalsize)
-* [rom-revision](#rom-revision)
-* [NVCAP](#nvcap)
+* [Thuộc tính model](#thuoc-tinh-model)
+* [Thuộc tính VRAM,totalsize](#thuoc-tinh-vram-totalsize)
+* [Thuộc tính rom-revision](#thuoc-tinh-rom-revision)
+* [Thuộc tính NVCAP](#thuoc-tinh-nvcap)
 
-### model
+### Thuộc tính model
 
-Technically cosmetic, however macOS expects this entry so we'll provide it. The format is as follows:
+Về kỹ thuật thì chỉ để làm đẹp, nhưng macOS yêu cầu phải có mục này nên chúng ta cứ cung cấp cho nó zừa lòng. Định dạng như sau:
 
 ```md
-GeForce [Device Name]
-# Example
+GeForce [Tên dòng sản phẩm]
+# Ví dụ
 GeForce GT 220
 ```
 
-### VRAM,totalsize
+### Thuộc tính VRAM,totalsize
 
-Amount of VRAM present on your card, in hexadecimal.
+Lượng VRAM có trên card của bạn, tính bằng hệ thập lục phân (hexadecimal).
 
-For this example, lets convert 1024MB to hexadecimal:
+Ví dụ, hãy chuyển đổi 1024MB sang hex:
 
 ```md
-# Convert 1024MB Megabytes to Bytes
+# Chuyển đổi 1024MB Megabytes sang Bytes
 echo '1024 * 1024 * 1024' | bc
  1073741824
 
-# Convert from decimal to hexadecimal
+# Chuyển từ thập phân sang thập lục phân
 echo 'obase=16; ibase=10; 1073741824' | bc
  40000000
 
-# Hexswap so it can be injected correctly
-# ie. swap in pairs
+# Đảo ngược Hex (Hexswap) để nạp cho đúng
+# tức là: đảo theo cặp
 40000000 -> 40 00 00 00 -> 00 00 00 40
 
-# Pad the value to 8 bytes with 00 at the end
+# Đệm giá trị cho đủ 8 byte bằng cách thêm 00 vào cuối
 00 00 00 40 00 00 00 00
 
-# And you're done
+# Và bạn đã xong được cái của nợ này
 VRAM,totalsize = 0000004000000000
 ```
 
-### rom-revision
+### Thuộc tính rom-revision
 
-Simply can be any value, however the property must exist as some GPUs fail to initialize without it(ex. GT 220's)
+Đơn giản là giá trị nào cũng được, nhưng thuộc tính này phải tồn tại vì một số loại GPU sẽ không khởi tạo được nếu thiếu nó (ví dụ: GT 220).
 
 ```
 rom-revision = Dortania
 ```
 
-### NVCAP
+### Thuộc tính NVCAP
 
-This is where the fun comes it, as we'll now need to calculate the NVCAP value. Thankfully for us, 1Revenger1 has created a tool to automate the process: [NVCAP Calculator](https://github.com/1Revenger1/NVCAP-Calculator/releases)
+Đây là phần vui nhất nè, vì chúng ta phải tính toán giá trị NVCAP. Ơn giời là thánh 1Revenger1 đã tạo ra một công cụ để tự động hóa quy trình này: [Máy tính NVCAP](https://github.com/1Revenger1/NVCAP-Calculator/releases)
 
-To use this program, simply grab your VBIOS([TechPowerUp hosts most VBIOS](https://www.techpowerup.com/vgabios/)) and run NVCAP-Calculator within your terminal.
+Để dùng chương trình này, tải VBIOS của card bạn về ([TechPowerUp lưu trữ hầu hết tất cả bản VBIOS của mọi dòng card màn hình](https://www.techpowerup.com/vgabios/)) và chạy NVCAP-Calculator trong terminal.
 
-Once its running, you should see the following:
+Chạy lên bạn sẽ thấy như sau:
 
 ![](../../images/gpu-patching/nvidia/nvcap-start.jpg)
 
-Give it your VBIOS and then press enter. Once it takes you to the main menu, select option 2 to take you to the NVCAP calculation page.
+Ném file VBIOS vào rồi nhấn Enter. Khi nó đưa bạn đến menu chính, chọn số 2 để vào trang tính toán NVCAP.
 
 ![](../../images/gpu-patching/nvidia/nvcap-initial-nvcap.jpg)
 
-Here you can see the connectors that NVCAP-Calculator was able to find. Each Display may represent multiple DCB Entries, such as DVI (normally represented as two entries) or duplicate DCB entries. The goal here is to assign each display to a head. Each head can only output to one display at a time. For example, if your using 2 DVI ports, each should be on their own head to have proper dual monitor support.
+Ở đây bạn có thể thấy các cổng kết nối mà NVCAP-Calculator tìm được. Mỗi Màn hình có thể đại diện cho nhiều mục DCB, ví dụ như DVI (thường được biểu diễn là hai mục) hoặc các mục DCB trùng lặp. Mục tiêu ở đây là gán mỗi màn hình cho một cái Head (Đầu xuất hình). Mỗi head chỉ có thể xuất ra một màn hình cùng một lúc. Ví dụ, nếu bạn dùng 2 cổng DVI, mỗi cổng nên nằm trên một head riêng để hỗ trợ màn hình kép (dual monitor) chuẩn chỉnh.
 
-Note that some displays may be assigned automatically. An LVDS display will be put on it's own head automatically, and TV displays will be put on the TV head automatically.
+Lưu ý là một số màn hình có thể được gán tự động. Màn hình LVDS (laptop) sẽ tự động được đặt vào head riêng của nó, màn hình TV sẽ tự động vào head TV.
 
-To start assigning displays, press `1`. To assign a display to a head, you type the number of the display then the number of the head. For example, typing in `1 1` results in:
+Để bắt đầu gán màn hình, nhấn `1`. Để gán một màn hình vào một head, bạn gõ số của màn hình rồi đến số của head. Ví dụ, gõ `1 1` sẽ cho kết quả:
 
 ![](../../images/gpu-patching/nvidia/nvcap-assign-entry.jpg)
 
-You can type in `1 1` again to remove the display from the head. Once you are done assigning displays, it should look something like this:
+Bạn có thể gõ `1 1` lần nữa để gỡ màn hình khỏi head đó. Khi gán xong xuôi, nó sẽ trông na ná thế này:
 
 ![](../../images/gpu-patching/nvidia/nvcap-complete-displays.jpg)
 
-Once you are done setting up the displays, press `q` to return to the other NVCAP settings. You should set the rest of the NVCAP settings as follows:
+Xong phần màn hình thì nhấn `q` để quay lại các cài đặt NVCAP khác. Bạn nên thiết lập phần còn lại của NVCAP như sau:
 
-| NVCAP Value | Details | Example Command |
+| NVCAP Value (Giá trị NVCAP) | Details (Chi tiết) | Example Command (Lệnh ví dụ) |
 | :---------: | :------ | :-------------- |
-| Version | `04` for 7 series and older, `05` for 8 series and newer | `3` then `4` |
-| Composite | `01` for S-Video, `00` otherwise | `4` to toggle |
-| Script based Power/Backlight | `00` ony useful for genuine MacBook Pros | `3` to toggle |
-| Field F (Unknown) | `0F` for 300 series and newer, otherwise `07` | `6` then `0x0f` |
+| Version | `04` cho dòng 7 series và cũ hơn, `05` cho dòng 8 series và mới hơn | `3` rồi `4` |
+| Composite | `01` cho S-Video, `00` cho loại khác | `4` để bật/tắt |
+| Script based Power/Backlight | `00` chỉ hữu dụng cho MacBook Pro thiệt | `3` để bật/tắt |
+| Field F (Unknown) | `0F` cho dòng 300 series và mới hơn, còn lại là `07` | `6` rồi `0x0f` |
 
-Once done, enter in `c` to calculate the NVCAP value
+Xong hết thì gõ `c` để tính toán giá trị NVCAP.
 
 ![](../../images/gpu-patching/nvidia/nvcap-calculated.jpg)
 
-You now have your NVCAP value!
+Tèn ten, bạn đã có giá trị NVCAP của mình!
 
 ```
 NVCAP: 
 05000000 00000300 0c000000 0000000f 00000000
 ```
 
-For those who are wanting a break down on how to calculate the NVCAP value:
+Cho những ai muốn biết chi tiết cách tính NVCAP thủ công:
 
-::: details NVCAP Table
+::: details Bảng NVCAP
 
 Info based off of [WhateverGreen's NVCAP.bt file](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/NVCAP.bt)
 
-| NVCAP Bit | Name | Comment |
+| NVCAP Bit | Name (Tên) | Comment (Ghi chú) |
 | :--- | :--- | :--- |
-| Byte 1 | NVCAP Version | `04` for 7 series and older, `05` for 8 series and newer |
-| Byte 2 | Laptop with Lid | `01` for true, `00` otherwise |
-| Byte 3 | Composite | `01` for S-Video, `00` otherwise |
-| Byte 4 | Backlight | `01` for Tesla V1 with Backlight, otherwise `00` for newer GPUs regardless of screen type |
-| Bytes 5+6   | TVDCBMask    | `00 00`, relates to DCB entry 5 |
-| Bytes 7+8   | Head0DCBMask | `00 00`, see below |
-| Bytes 9+10  | Head1DCBMask | `00 00`, see below |
-| Bytes 11+12 | Head2DCBMask | `00 00`, non-applicable for Fermi and older |
-| Bytes 13+14 | Head3DCBMask | `00 00`, non-applicable for Fermi and older |
-| Byte 15 | ScriptBasedPowerAndBacklight| `00`, only relevant for genuine MacBook Pros |
-| Byte 16 | Unknown | `0F` for 300 series and newer, otherwise `07` |
+| Byte 1 | NVCAP Version | `04` cho 7 series và cũ hơn, `05` cho 8 series và mới hơn |
+| Byte 2 | Laptop with Lid | `01` nếu có nắp gập, `00` nếu không có |
+| Byte 3 | Composite | `01` cho S-Video, `00` nếu không có |
+| Byte 4 | Backlight | `01` cho Tesla V1 có điều khiển đèn nền (màn hình laptop, AIO), ngược lại, nếu không có thì chọn `00` cho GPU mới hơn bất kể loại màn hình |
+| Bytes 5+6   | TVDCBMask    | `00 00`, liên quan đến mục DCB 5 |
+| Bytes 7+8   | Head0DCBMask | `00 00`, xem bên dưới |
+| Bytes 9+10  | Head1DCBMask | `00 00`, xem bên dưới |
+| Bytes 11+12 | Head2DCBMask | `00 00`, không áp dụng cho Fermi và cũ hơn |
+| Bytes 13+14 | Head3DCBMask | `00 00`, không áp dụng cho Fermi và cũ hơn |
+| Byte 15 | ScriptBasedPowerAndBacklight| `00`, chỉ liên quan đến MacBook Pro đồ thiệt |
+| Byte 16 | Unknown | `0F` cho 300 series và mới hơn, ngược lại `07` |
 | Byte 17 | EDID | `00` |
 | Byte 18 | Reserved | `00` |
 | Byte 19 | Reserved | `00` |
@@ -174,9 +174,9 @@ Info based off of [WhateverGreen's NVCAP.bt file](https://github.com/acidanthera
 
 :::
 
-### Cleaning up
+### Tổng kết 
 
-Now that we've gotten all our properties, we can now add em up and place them in our config.plist:
+Giờ đã có đủ các thuộc tính trong tay, gom tụi nó lại rồi nhét vào config.plist thôi:
 
 ```
 PciRoot(0x2)/Pci(0x0,0x0)/Pci(0x0,0x0)
@@ -194,6 +194,6 @@ NVCAP          |  Data  | 05000000 00000300 0c000000 0000000f 00000000
 @1,name        | String | NVDA,Display-B
 ```
 
-Open your config.plist and head to `DeviceProperties -> Add`, next create a new child with the name of your GPU's path(ie the one with gfxutil). Then, finally add the properties as children to the PciRoot. You should end up with something similar:
+Mở config.plist, vào `DeviceProperties -> Add`, tạo một mục con mới với tên là đường dẫn GPU của bạn (cái lấy từ gfxutil hồi nãy á). Sau đó, thêm các thuộc tính trên làm con của cái PciRoot đó. Kết quả cuối cùng sẽ trông giống thế này:
 
 ![](../../images/gpu-patching/nvidia/deviceproperties.png)

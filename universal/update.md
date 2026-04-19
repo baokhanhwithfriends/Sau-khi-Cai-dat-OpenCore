@@ -1,120 +1,123 @@
-# Updating OpenCore and macOS
+# Cập nhật OpenCore, kexts và macOS
 
-## Updating OpenCore
+## Cập nhật OpenCore
 
-So the main things to note with updating OpenCore:
+Vài điều quan trọng cần ghi nhớ khi cập nhật OpenCore:
 
-* [Releases](https://github.com/acidanthera/OpenCorePkg/releases) happen the first Monday of every month
-* The [Differences.pdf](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Differences/Differences.pdf) will tell you all the things added and removed from this version of OpenCore compared to the previous release
-* The OpenCore Install Guide will have a note in the [header](https://dortania.github.io/OpenCore-Install-Guide/) about what release version it supports
+* [Các bản phát hành](https://github.com/acidanthera/OpenCorePkg/releases) sẽ được tung ra vào ngày thứ Hai đầu tiên của mỗi tháng
+* Tệp [Differences.pdf](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Differences/Differences.pdf) sẽ "mách" bạn tất cả những thứ được thêm vào hay bị đá ra khỏi phiên bản này so với bản trước
+* Hướng dẫn cài đặt OpenCore (OpenCore Install Guide) sẽ có một ghi chú ở [header (phần đầu trang)](https://dortania.github.io/OpenCore-Install-Guide/) cho biết nó đang hỗ trợ phiên bản nào.
 
-> So how do I update?
+> Vậy tui cập nhật như thế nào đây?
 
-So the process goes as follows:
+Quy trình diễn ra như sau:
 
-### 1. **Download the latest release of OpenCore**
+### 1. **Tải bản OpenCore mới nhất về**
 
 * [OpenCorePkg](https://github.com/acidanthera/OpenCorePkg/releases)
 
-### 2. **Mount your EFI**
+### 2. **Mount (gắn kết) phân vùng EFI**
 
-* So first, lets mount your hard drive's EFI and make a copy somewhere safe with [MountEFI](https://github.com/corpnewt/MountEFI). We won't be updating the drive's EFI at first, instead we'll be grabbing a spare USB to be our crash dummy. This allows us to keep a working copy of OpenCore in case our update goes south
+* Đầu tiên, hãy mount (gắn kết) EFI của ổ cứng và sao lưu nó ra một chỗ an toàn bằng [MountEFI](https://github.com/corpnewt/MountEFI). Chúng ta sẽ không cập nhật trực tiếp lên ổ cứng ngay đâu, thay vào đó hãy kiếm một cái USB sơ cua để làm "chuột bạch". Điều này giúp bạn giữ lại được bản OpenCore đang chạy ổn định phòng khi bản cập nhật bị "toang".
 
-* For the USB, it must be formatted as GUID. Reason for this is that GUID will automatically create an EFI partition, though this will be hidden by default so you'll need to mount it with MountEFI.
+* Với cái USB, nó phải được định dạng chuẩn GUID. Lý do là chọn GUID thì Disk Utility sẽ tự động tạo một cái phân vùng EFI, mặc dù nó sẽ bị ẩn theo mặc định nên bạn cần xài MountEFI để lôi đầu nó ra.
 
  ![](../images/post-install/update-md/usb-erase.png)
 
-* Now you can place your OpenCore EFI on the USB
+* Giờ thì bạn có thể ném cái folder EFI OpenCore của bạn vào USB.
 
  ![](../images/post-install/update-md/usb-folder.png)
 
-### 3. **Replace the OpenCore files with the ones you just downloaded**
+### 3. **Thay thế các file OpenCore bằng hàng mới tải**
 
-* The important ones to update:
+* Mấy file quan trọng cần cập nhật:
 
   * `EFI/BOOT/BOOTx64.efi`
   * `EFI/OC/OpenCore.efi`
-  * `EFI/OC/Drivers/OpenRuntime.efi`(**Don't forget this one, OpenCore will not boot with mismatched versions**)
+  * `EFI/OC/Drivers/OpenRuntime.efi`(**Đừng quên cái này, OpenCore sẽ nghỉ chạy nếu phiên bản của 1 trong các file này bị lệch nhau**)
 
-* You can also update other drivers you have if present, these are just the ones that **must** be updated in order to boot correctly
+* Bạn cũng có thể cập nhật các driver khác nếu có, nhưng mấy cái trên là **bắt buộc** phải cập nhật để khởi động được.
 
 ![](../images/post-install/update-md/usb-folder-highlight.png)
 
-### 4. **Compare your config.plist to that of the new Sample.plist**
+### 4. **So sánh config.plist của bạn với Sample.plist mới**
 
-* With this, there's a couple ways to do this:
+* Cái này thì có nhiều cách để thực hiện:
 
-  * [OCConfigCompare](https://github.com/corpnewt/OCConfigCompare) to compare between the sample.plist and your config.plist
-  * `diff (file input 1) (file input 2)` in terminal
-  * [Meld Merge](https://github.com/yousseb/meld/releases/), [WinMerge](https://winmerge.org/), or your other favorite comparison software
-  * Make a new config based off reading the updated OpenCore Install Guide
+  * [OCConfigCompare](https://github.com/corpnewt/OCConfigCompare) để so sánh giữa sample.plist và config.plist của bạn.
+  * Chạy lệnh `diff (file đầu vào 1) (file đầu vào 2)` trong terminal
+  * [Meld Merge](https://github.com/yousseb/meld/releases/), [WinMerge](https://winmerge.org/), hoặc phần mềm so sánh mà bạn hay sử dụng.
+  * Tạo một config mới dựa trên việc đọc Hướng dẫn cài đặt OpenCore đã được cập nhật.
 
 ![](../images/post-install/update-md/oc-config-compare.png)
 
-* Once you've made the adjustments, to make sure that you config is compliant with the newest release of OpenCore, you can use the OpenCore Utility ocvalidate: this tool will help ensure your config.plist is matching the OpenCore specification of the matching build.
-  * Please note, that `ocvalidate` must match the used OpenCore release and may not be able to detect all configuration flaws present in the file. We recommend to double check your setting with the OpenCore Guide on what to set everything to, otherwise read the [Differences.pdf](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Differences/Differences.pdf)  for more in-depth documentation on changes.
-  * To run `ocvalidate`, `cd` into OpenCore's `Utilties/ocvalidate/` and run `./ocvalidate <insert_config.plist>`. Note you may need to run `chmod +x ocvalidate` for it to execute.
-  * In addition, update ProperTree and perform an OC Snapshot (Ctrl/Cmd+R) to ensure that the config entries for your SSDTs, drivers, kexts, etc. are compliant with the format OpenCore expects.
+* Khi đã chỉnh sửa xong, để chắc ăn là config của bạn hợp chuẩn với bản OpenCore mới nhất, bạn có thể dùng tiện ích ocvalidate của OpenCore: công cụ này giúp đảm bảo config.plist của bạn khớp với thông số kỹ thuật của bản build tương ứng.
+  * Lưu ý nhẹ, `ocvalidate` phải đúng phiên bản với bản OpenCore đang dùng và có thể nó không phát hiện được hết mọi lỗi đâu. Tụi mình khuyên bạn nên check kỹ lại cài đặt với Hướng dẫn OpenCore, hoặc đọc [Differences.pdf](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Differences/Differences.pdf) để biết chi tiết sâu hơn về các thay đổi trong bản cập nhật mới.
+  * Để chạy `ocvalidate`, xài lệnh `cd` vào thư mục `Utilties/ocvalidate/` của OpenCore và chạy `./ocvalidate <insert_config.plist>`. Lưu ý có thể bạn cần `chmod +x ocvalidate` để cấp quyền thực thi cho nó.
+  * Ngoài ra, nhớ cập nhật ProperTree và thực hiện OC Snapshot (Ctrl/Cmd+R) để đảm bảo các mục config cho SSDT, driver, kext, v.v. đều đúng chuẩn mà OpenCore mong muốn.
 
 ![](../images/post-install/update-md/ocvalidate.png)
 
-### 5. **Boot!**
+### 5. **Khởi động!**
 
-* Once everything's working with the dummy USB, you can mount the EFI and move it over to the hard drive's EFI partition. Remember to keep a copy of your old EFI in cases where OpenCore is acting funny down the road
+* Một khi mọi thứ chạy ngon lành trên cái USB "chuột bạch", bạn có thể mount EFI và chuyển nó sang phân vùng EFI của ổ cứng. Nhớ giữ lại bản sao EFI cũ phòng khi OpenCore dở chứng giữa đường nhé.
 
-## Updating Kexts
+## Cập nhật Kext
 
-* Updating Kexts is a similar process to updating OpenCore, make a copy of everything and update on a dummy USB in case there's issues
+* Cập nhật Kexts cũng na ná cập nhật OpenCore thôi, sao lưu mọi thứ và cập nhật trên USB test phòng khi có biến.
 
-* The easiest way to update your kexts is via 2 tools:
+* Cách dễ nhất để cập nhật kexts là dùng 2 công cụ này:
 
-  * [Lilu and Friends](https://github.com/corpnewt/Lilu-and-Friends) to download and compile the kexts
-  * [Kext Extractor](https://github.com/corpnewt/KextExtractor) to merge them into your EFI
+  * [Lilu and Friends](https://github.com/corpnewt/Lilu-and-Friends) để tải và biên dịch kext.
+  * [Kext Extractor](https://github.com/corpnewt/KextExtractor) để gộp tụi nó vào EFI của bạn.
 
-## Updating macOS
+## Cập nhật macOS
 
-* So this is probably one of the most challenging parts, maintaining your system through OS updates. The main things to keep in mind:
-  * With OS updates, make sure everything has been updated and you have some form of recovery like TimeMachine or an older macOS installer with a known good EFI on it
-  * Do a bit of google-fu to see if others are having issues with the newest update
+* Đây có lẽ là phần "khoai" nhất: duy trì hệ thống qua các bản cập nhật OS. Mấy điều chính cần nhớ:
+  * Với các bản cập nhật OS, đảm bảo mọi thứ (Kext, OpenCore) đã được cập nhật và bạn có phương án cứu hộ như Time Machine hoặc một bộ cài macOS cũ với EFI đang chạy tốt.
+  * Xài "Google thần chưởng" (google-fu) xem thiên hạ có ai kêu ca gì về bản cập nhật mới nhất không.
 
-* I've also provided a bit more of a detailed map of what's changed in macOS versions, see below:
+* Tụi mình cũng cung cấp một bản đồ chi tiết hơn về những thay đổi trong các phiên bản macOS, xem bên dưới:
 
 **macOS Catalina**:
 
 * 10.15.0
-  * [Requires proper EC](https://dortania.github.io/Getting-Started-With-ACPI/)
-  * Dual socket and most AMD CPUs need [AppleMCEReporterDisabler.kext](https://github.com/acidanthera/bugtracker/files/3703498/AppleMCEReporterDisabler.kext.zip)
-  * MacPro5,1 support has been dropped
+  * [Yêu cầu EC chuẩn chỉnh](https://baokhanhwithfriends.github.io/Khoi-dau-voi-ACPI/)
+  * Máy có Dual socket (2 CPU) và hầu hết CPU AMD cần [AppleMCEReporterDisabler.kext](https://github.com/acidanthera/bugtracker/files/3703498/AppleMCEReporterDisabler.kext.zip)
+  * Ngừng hỗ trợ SMBIOS MacPro5,1
 * 10.15.1
-  * Requires WhateverGreen 1.3.4+
-  * Broke DRM for many GPUs(see [DRM Chart](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.Chart.md))
-  * Requires all previous fixes
+  * Yêu cầu WhateverGreen 1.3.4 trở lên
+  * Làm hư chức năng DRM trên nhiều loại card màn hình (xem [Bảng DRM](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.Chart.md))
+  * Yêu cầu tất cả các bản vá trước đó
 * 10.15.2
-  * Fixes Navi support in the installer
-  * Requires all previous fixes
+  * Sửa lỗi cho card màn hình Navi trong bộ cài
+  * Yêu cầu tất cả các bản vá trước đó
 * 10.15.3
-  * No change
-  * Requires all previous fixes
+  * Không có thay đổi mới
+  * Yêu cầu tất cả các bản vá trước đó
 * 10.15.4
-  * [AMD CPU users need to update `cpuid_set_cpufamily` patch](https://github.com/AMD-OSX/AMD_Vanilla)
-  * Fixes DRM on many Ellesmere based Polaris GPUs
-  * Requires all previous fixes(excluding `shikigva=80` for Polaris DRM for most users)
+  * [Bạn đọc sử dụng CPU AMD cần cập nhật bản vá `cpuid_set_cpufamily`](https://github.com/AMD-OSX/AMD_Vanilla)
+  * Sửa lỗi DRM trên nhiều card màn hình AMD kiến trúc Polaris có mã là Ellesmere
+  * Yêu cầu tất cả các bản vá trước đó (trừ `shikigva=80` cho DRM cho card màn hình Polaris với đa số bạn đọc đang sử dụng)
 * 10.15.5
-  * UHD 630's framebuffer broke for many, if you receive black screen you may need to swap from `07009B3E` to `00009B3E`
-  * Comet Lake S no longer requires a CPU ID spoof
+  * Framebuffer của UHD 630 đang sử dụng ngon đột nhiên bị lỗi với nhiều người, nếu bị màn hình đen bạn có thể cần đổi từ `07009B3E` sang `00009B3E`
+  * Comet Lake S không cần giả mạo (spoof) CPU ID nữa vì đã được hỗ trợ chính thức
 * 10.15.6
-  * No change
-  * Requires all previous fixes for 10.15.5
+  * Không có thay đổi mới
+  * Yêu cầu tất cả các bản vá của bản 10.15.5
 * 10.15.7
-  * No change
-  * Requires all previous fixes for 10.15.5
+  * Không có thay đổi mới
+  * Yêu cầu tất cả các bản vá của bản 10.15.5
+* 10.15.8
+  * Không có thay đổi mới
+  * Yêu cầu tất cả các bản vá của bản 10.15.5  
   
 **macOS Big Sur**:
 
 * 11.0.1
-  * See here: [OpenCore and macOS 11: Big Sur](https://dortania.github.io/OpenCore-Install-Guide/extras/big-sur/)
+  * Đọc thêm tại đây: [OpenCore và macOS 11: Big Sur](https://baokhanhwithfriends.github.io/Huong-dan-cai-dat-OpenCore/extras/big-sur/)
 
 **macOS Monterey**:
 
 * 12.0.1
-  * See here: [OpenCore and macOS 12: Monterey](https://dortania.github.io/OpenCore-Install-Guide/extras/monterey.html)
+  * Đọc thêm tại đây: [OpenCore và macOS 12: Monterey](https://baokhanhwithfriends.github.io/Huong-dan-cai-dat-OpenCore/extras/monterey.html)

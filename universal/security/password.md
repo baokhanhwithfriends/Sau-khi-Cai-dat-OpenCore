@@ -1,35 +1,35 @@
-# OpenCore Menu Password
+# Menu mật khẩu OpenCore
 
-With OpenCore 0.6.1 and newer, users are able to set a SHA-512 password to ensure best security with their setups. This will enable a password prompt whenever elevated tasks are required. This includes:
+Từ bản OpenCore 0.6.1 trở đi, anh em mình đã có thể đặt mật khẩu chuẩn SHA-512 (thuật toán mã hóa cực mạnh) để bảo vệ dàn máy cưng của mình. Khi bật cái này lên, mỗi khi bạn muốn làm mấy việc "hệ trọng" là máy sẽ hỏi mật khẩu ngay. Mấy việc đó bao gồm:
 
-* Showing boot menu
-* Booting non-default OSes and tools(ie. not blessed by Startup Disk or Bootcamp Utility)
-* Resetting NVRAM
-* Booting non-default modes(ie. Verbose or Safe Mode via hotkeys)
+* Hiển thị menu khởi động (boot menu)
+* Khởi động các hệ điều hành hoặc công cụ không mặc định (tức là mấy thứ không được chọn sẵn trong Startup Disk (Ổ đĩa khởi động) hoặc Bootcamp Utility (Công cụ Bootcamp))
+* Reset NVRAM
+* Khởi động các chế độ không mặc định (ví dụ như chế độ Verbose (hiển thị dòng lệnh) hoặc Safe Mode (chế độ an toàn) qua các phím tắt)
 
-With OpenCore 0.6.7, a new tool called `ocpasswordgen` was added to aid users in generating passwords.
+Với bản OpenCore 0.6.7, một công cụ mới tên là `ocpasswordgen` (trình tạo mật khẩu OpenCore) đã được thêm vào để giúp bạn tạo mật khẩu dễ dàng hơn.
 
-To start, lets grab OpenCore 0.6.7 or newer and run the `ocpasswordgen` binary under `Utilities/ocpasswordgen/`. It'll prompt you to create a password:
+Để bắt đầu, hãy lấy bản OpenCore 0.6.7 hoặc mới hơn và chạy file nhị phân `ocpasswordgen` trong thư mục `Utilities/ocpasswordgen/`. Nó sẽ hiện ra thông báo yêu cầu bạn tạo mật khẩu:
 
 ![](../../images/post-install/security-md/ocpasswordgen.png)
 
-For this example, we chose `Dortania` as the password. `ocpasswordgen` then popped out 2 important values we need for our config.plist:
+Trong ví dụ này, mình chọn mật khẩu là `Dortania`. Công cụ `ocpasswordgen` sau đó sẽ "nhả" ra 2 giá trị quan trọng để mình điền vào file config.plist (file cấu hình):
 
-* PasswordHash: Hash of the password
-* PasswordSalt: Ensures 2 users with the exact same password do not do not have the same hash
+* PasswordHash: Hàm băm của mật khẩu (chuỗi mã hóa)
+* PasswordSalt: Muối của mật khẩu!?? (giúp bảo đảm 2 người dùng có cùng mật khẩu cũng không bị trùng bản băm)
 
-Next let's open our config.plist and add these values to Misc -> Security:
+Tiếp theo, hãy mở file config.plist và thêm các giá trị này vào mục Misc -> Security:
 
-* Note: Don't forget to also enable `EnablePassword`
+* Lưu ý (Note): Đừng quên bật mục `EnablePassword` (Kích hoạt mật khẩu)
 
 ![](../../images/post-install/security-md/password-config.png)
 
-Once these changes have been made, you can save and reboot the machine. Now when you enter OpenCore's menu, you should receive a prompt:
+Sau khi thay đổi xong, bạn lưu lại và khởi động lại máy. Bây giờ, khi vào menu của OpenCore, bạn sẽ thấy một bảng hỏi mật khẩu hiện ra:
 
 ![](../../images/post-install/security-md/password-demo.png)
 
-Enter your password and you should get your regular boot options:
+Nhập mật khẩu của bạn vào là sẽ thấy các tùy chọn khởi động như bình thường:
 
-* Note: Between typing the password and entering the menu, some older machines and VMs can take 30 seconds+ to finish verification. Please be patient
+* Lưu ý (Note): Trên một số máy đời cũ hoặc máy ảo (VM), từ lúc bạn gõ xong mật khẩu tới lúc nó vào được menu có thể mất hơn 30 giây để xác thực xong. Đoạn này bạn nhớ kiên nhẫn một chút, đừng tưởng máy treo nha.
 
 ![](../../images/post-install/security-md/password-done.png)

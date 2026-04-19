@@ -1,35 +1,35 @@
-# Optimizing Power Management
+# Sửa lỗi điều phối điện năng nâng cao
 
-## Enabling X86PlatformPlugin
+## Kích hoạt X86PlatformPlugin
 
-So before we can fine tune power management to our liking, we need to first make sure Apple's XCPM core is loaded. Note that this is supported **only on Haswell and newer**, consumer Sandy, Ivy Bridge and AMD CPUs should refer to the following:
+Trước khi chúng ta có thể cấu hình điều phối điện năng theo ý thích (thay vì theo mặc định của Apple), việc đầu tiên là phải bảo đảm cái lõi XCPM (XNU CPU Power Management - Quản lý điện năng CPU của kernel) của Apple đã được nạp. Lưu ý là món này **chỉ hỗ trợ Haswell và các đời mới hơn**, mấy bác xài CPU Sandy, Ivy Bridge dòng phổ thông và AMD thì vui lòng ghé xuống chỗ này nghen:
 
-* [Sandy and Ivy Bridge Power Management](../universal/pm.md#sandy-and-ivy-bridge-power-management)
-* [AMD CPU Power Management](../universal/pm.md#amd-cpu-power-management)
+* [Điều phối điện năng cho đời Sandy và Ivy Bridge](../universal/pm.md#đieu-phoi-đien-nang-cho-đoi-sandy-va-ivy-bridge)
+* [Điều phối điện năng cho CPU AMD](../universal/pm.md#đieu-phoi-đien-nang-cho-cpu-amd)
 
-::: details Ivy Bridge and Ivy Bridge-E note
+::: details Lưu ý cho đời Ivy Bridge và Ivy Bridge-E
 
-Apple dropped support for XCPM on these models back in macOS Sierra, so XCPM is only supported between 10.8.5 and 10.11.6. You will still need [ssdtPRgen](../universal/pm.md#sandy-and-ivy-bridge-power-management).
+Apple đã "đem con bỏ chợ", ngừng hỗ trợ XCPM trên mấy dòng này từ hồi macOS Sierra, nên XCPM chỉ chạy được từ bản 10.8.5 đến 10.11.6 thôi. Bạn vẫn sẽ cần [ssdtPRgen](../universal/pm.md#đieu-phoi-đien-nang-cho-đoi-sandy-va-ivy-bridge).
 
-To enable XCPM in 10.11 and older on these models, simply add `-xcpm` to your boot-args.
+Để kích hoạt XCPM trên 10.11 và cũ hơn cho mấy dòng này, đơn giản là bổ sung thêm `-xcpm` vào boot-args (tham số khởi động).
 
 :::
 
-To start, grab [IORegistryExplorer](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip) and look for `AppleACPICPU` (Note that if you use search, IORegistryExplorer won't show the children of any services found. Be sure to clear the search box once you've found the entry):
+Để bắt đầu (với đời Haswell và mới hơn), tải [IORegistryExplorer](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip) về và tìm từ khóa `AppleACPICPU` (Lưu ý là nếu bạn xài tính năng tìm kiếm, IORegistryExplorer sẽ không hiện các mục con của dịch vụ tìm thấy đâu. Nhớ xóa ô tìm kiếm đi sau khi đã tìm thấy mục cần tìm nhé):
 
-XCPM Present           |  Missing XCPM
+Có XCPM           |  Chưa có XCPM
 :-------------------------:|:-------------------------:
 ![](../images/post-install/pm-md/pm-working.png)  |  ![](../images/post-install/pm-md/pm-not-working.png)
 
-As you can see from the image on the left, we have X86PlatformPlugin attached. This means that Apple's CPU power management drivers are working (the name of the CPU does not matter). If you see something similar to the image on the right, then there's likely an issue. Make sure to check the following:
+Như bạn thấy ở hình bên trái, chúng ta có X86PlatformPlugin được đính kèm. Cái này có nghĩa là driver điều phối điện năng CPU của Apple đang chạy ngon lành (tên của CPU không quan trọng đâu). Nếu bạn thấy giống hình bên phải, thì chắc chắn là có vấn đề rồi. Bạn vui lòng kiểm tra lại mấy thứ sau:
 
-* SSDT-PLUG.**aml** is both present and enabled in your config.plist and EFI/OC/ACPI
-  * If you're missing this, head to [Getting Started With ACPI](https://dortania.github.io/Getting-Started-With-ACPI) on how to make this
-* SSDT-PLUG is set to the first thread of your CPU. You can check by selecting the first CPU listed (`CP00` for our example) and make sure you see this in the properties:
+* SSDT-PLUG.**aml** đã có mặt và được bật (Enabled) trong config.plist và thư mục EFI/OC/ACPI chưa.
+  * Nếu bạn thiếu cái này, ghé qua [Khởi đầu với ACPI](https://dortania.github.io/Getting-Started-With-ACPI) để tìm hiểu cách tạo nhé.
+* SSDT-PLUG đã được set cho luồng (thread) đầu tiên của CPU chưa. Bạn có thể kiểm tra bằng cách chọn CPU đầu tiên trong danh sách (`CP00` trong ví dụ của chúng ta) và đảm bảo bạn thấy dòng này trong phần thuộc tính:
 
-::: tip
+::: tip MẸO
 
-SSDT-PLUG is not required on macOS 12.3 and up.
+SSDT-PLUG không bắt buộc trên macOS 12.3 trở lên.
 
 :::
 
@@ -37,9 +37,9 @@ SSDT-PLUG is not required on macOS 12.3 and up.
 plugin-type | Number | 0x1
 ```
 
-::: details X99 Note
+::: details Lưu ý với dòng X99
 
-XCPM does not natively support Haswell-E and Broadwell-E, this means we need to spoof the CPU ID into a model that does supports XCPM:
+XCPM không hỗ trợ Haswell-E và Broadwell-E một cách trực tiếp (native), chúng ta cần giả mạo (spoof) CPU ID thành một model có hỗ trợ XCPM:
 
 * **Haswell-E**:
 
@@ -55,110 +55,111 @@ XCPM does not natively support Haswell-E and Broadwell-E, this means we need to 
 
 :::
 
-## Manually Modifying Power Management Data
+## Tự tay tạo bảng dữ liệu điều phối điện năng
 
-In most cases, the native CPU power management data shipped with macOS work out of the box. If you're experiencing issues, changing your SMBIOS to something more appropriate to your system will provide different data and may be better for your usecase. In the cases where manual tuning is required, you can use CPUFriend to inject modified power management data, but if you don't know what you're doing, you can severely break power management.
+Trong đa số trường hợp thì dữ liệu điều phối điện năng CPU mặc định của macOS chạy ngon ngay từ đầu (out of the box). Nếu bạn gặp vấn đề hoặc cảm thấy máy chạy ì hơn hoặc máy chạy nóng hơn so với Windows (do macOS tự điều chỉnh xung cao hơn dù xài tác vụ nhẹ), bạn nên thử đổi SMBIOS sang cái nào phù hợp hơn với máy tính của bạn, nó sẽ cung cấp dữ liệu khác và có thể khiến CPU chạy hợp với cảm giác sử dụng của bạn hơn. Trong trường hợp bắt buộc phải chỉnh thủ công, bạn có thể xài CPUFriend để nạp (inject) dữ liệu điều phối điện năng đã chỉnh sửa, nhưng cảnh báo trước là nếu "gà mờ" không biết mình đang làm gì thì bạn có thể làm hư luôn cái điều phối điện năng đó nha.
 
-::: warning
+::: warning CẢNH BÁO
 
-In most cases, you do not have to do this. Change your SMBIOS instead.
-
-:::
-
-::: tip
-
-This is an example on how to change some parts of power management data. For more information, you should check out [CPUFriend's documentation](https://github.com/acidanthera/CPUFriend/blob/master/Instructions.md).
+Trong hầu hết các trường hợp, bạn không cần làm bước này. Hãy đổi SMBIOS trước đi.
 
 :::
 
-### Using CPUFriend
+::: tip MẸO
 
-To start, we're gonna need a couple things:
+Đây là ví dụ về cách thay đổi một số phần của dữ liệu điều phối điện năng. Để biết thêm chi tiết, bạn nên đọc [Tài liệu của CPUFriend](https://github.com/acidanthera/CPUFriend/blob/master/Instructions.md).
 
-* X86PlatformPlugin loaded
-  * This means Sandy Bridge and AMD CPUs are not supported
+:::
+
+### Sử dụng CPUFriend
+
+Để bắt đầu, chúng ta cần chuẩn bị vài món đồ chơi:
+
+* X86PlatformPlugin đã được nạp.
+  * Nghĩa là CPU Sandy Bridge và AMD miễn chơi trò này nhé.
 * [CPUFriend](https://github.com/acidanthera/CPUFriend/releases)
 * [CPUFriendFriend](https://github.com/corpnewt/CPUFriendFriend)
 
-### LFM: Low Frequency Mode
+### LFM: Low Frequency Mode (Chế độ tần số thấp)
 
-Now let's run CPUFriendFriend.command:
+Giờ chạy file CPUFriendFriend.command lên:
 
 ![](../images/post-install/pm-md/lpm.png)
 
-When you first open up CPUFriendFriend, you'll be greeted with a prompt for choosing your LFM value. This can be seen as the floor of your CPU, or the lowest value it'll idle at. This value can greatly help with sleep functioning correctly as macOS needs to be able to transition from S3(sleep) to S0(wake) easily.
+Mới mở lên, CPUFriendFriend sẽ hỏi bạn chọn giá trị LFM. Bạn có thể hiểu đây là cái "sàn" của CPU, hay mức xung nhịp thấp nhất mà nó sẽ chạy khi trong chế độ nghỉ (idle). Giá trị này giúp ích rất nhiều cho việc ngủ (sleep) ngon lành vì macOS cần chuyển từ trạng thái S3 (ngủ) sang S0 (tỉnh) một cách mượt mà.
 
-To determine your LFM value, you can either:
+Để xác định giá trị LFM, bạn có thể:
 
-* Look for the `TDP-down Frequency` on Intel's [ARK site](https://ark.Intel.com/)
-  * Note most CPUs do not have a listed value, so you'll need to determine yourself
-* Or choose recommended values:
+* Tìm giá trị `TDP-down Frequency` (Tần số TDP thấp nhất) trên [trang ARK](https://ark.Intel.com/) của Intel
+  * Lưu ý là Intel không công bố giá trị này với đa số CPU, nên bạn phải tự mò thôi.
+* Hoặc chọn theo các giá trị mẫu được khuyến nghị:
 
-| Generation | LFM Value | Comment |
+| Thế hệ CPU | Giá trị LFM | Ghi chú |
 | :--- | :--- | :--- |
-| Broadwell+ Laptops | 08 | Equivalent of 800Mhz |
-| Broadwell+ Desktops | 0A | Equivalent of 1000Mhz |
-| Haswell/Broadwell HEDT/Server(ie. X99) | 0D | Equivalent of 1300Mhz |
-| Skylake+ HEDT/Server(ie. X299) | 0C | Equivalent of 1200Mhz |
+| Laptop đời Broadwell trở lên  | 08 | Tương đương 800Mhz |
+| Máy bàn đời Broadwell trở lên | 0A | Tương đương 1000Mhz |
+| Máy trạm (HEDT)/Máy chủ (Server) đời Haswell/Broadwell (VD: X99) | 0D | Tương đương 1300Mhz |
+| Máy trạm (HEDT)/Máy chủ (Server) đời Skylake trở lên (VD: X299) | 0C | Tương đương 1200Mhz |
 
-* **Note**: LFM value is only available on Broadwell and newer SMBIOS
-* **Note 2**: these values are not set in stone, each machine will have unique characteristics and so you'll need to experiment what works best for your hardware
+* **Lưu ý**: Giá trị LFM chỉ khả dụng trên SMBIOS Broadwell và mới hơn. Đời cũ hơn thì bỏ qua
+* **Lưu ý số 2**: Mấy giá trị này không phải là chân lý bất di bất dịch, mỗi máy mỗi tính cách nên bạn cần thử nghiệm xem cái nào chạy ngon nhất trên phần cứng của mình.
 
-For this example we'll be using the [i9 7920x](https://ark.Intel.com/content/www/us/en/ark/products/126240/Intel-core-i9-7920x-x-series-processor-16-5m-cache-up-to-4-30-ghz.html) which has a base clock of 2.9 GHz but no LFM, so we'll choose 1.3 GHz(ie. 1300Mhz) and work our way up/down until we find stability.
+Ví dụ này tụi mình xài con [Core i9 7920x](https://ark.Intel.com/content/www/us/en/ark/products/126240/Intel-core-i9-7920x-x-series-processor-16-5m-cache-up-to-4-30-ghz.html) có xung nhịp cơ bản là 2.9 GHz nhưng không công bố LFM, nên tụi mình chọn đại 1.3 GHz (tức là 1300Mhz) rồi tăng/giảm dần đến khi thấy ổn định.
 
-* Note that the LFM value is simply the CPU's multiplier, so you'll need to trim your value appropriately
-  * ie. Divide by 100, then convert to hexadecimal
+* Lưu ý rằng giá trị LFM đơn giản là hệ số nhân (multiplier) của CPU, nên bạn cần cắt gọt giá trị cho đúng.
+  * Tức là: Chia cho 100, rồi chuyển sang hệ thập lục phân (hexadecimal).
 
 ```sh
 echo "obase=16; 13" | bc
 ```
 
-* Pay close attention we used 13 for 1.3Ghz and not 1.3
+* Để ý kỹ là tụi mình xài số 13 cho 1.3Ghz chứ không phải nhập 1.3 nha.
 
-### EPP: Energy Performance Preference
+### EPP: Energy Performance Preference (Ưu tiên hiệu năng hoặc tiết kiệm năng lượng)
 
 ![](../images/post-install/pm-md/epp.png)
 
-Next up is the Energy Performance Preference, EPP. This tells macOS how fast to turbo up the CPU to its full clock. `00` will tell macOS to let the CPU go as fast as it can as quickly as it can while `FF` will tell macOS to take things slowly and let the CPU ramp up over a much longer period of time. Depending on what you're doing and the cooling on your machine, you may want to set something in the middle. Below chart can help out a bit:
+Tiếp theo là Energy Performance Preference. Cái này nói cho macOS biết khi nào nên tăng tốc CPU lên mức xung nhịp tối đa ngay lập tức hay tăng từ từ. Giá trị `00` sẽ kêu macOS cứ "đạp ga hết cỡ" nhanh nhất có thể, trong khi `FF` sẽ kêu macOS cứ "từ từ thôi em", cho CPU tăng tốc từ từ một cách thong thả nên lâu hơn. Giống như bạn chuyển chế độ Sport hoặc Balanced trên xe hơi vậy. Tùy vào việc bạn làm gì và tản nhiệt máy bạn ra sao, bạn có thể chọn mức ở giữa. Bảng dưới đây giúp bạn tham khảo:
 
-| EPP | Speed |
+| EPP | Speed (Tốc độ/Chiến thuật) |
 | :--- | :--- |
-| 0x00-0x3F| Max Performance |
-| 0x40-0x7F | Balance performance |
-| 0x80-0xBF | Balance power |
-| 0xC0-0xFF | Max Power Saving |
+| 0x00-0x3F | Max Performance (Hiệu năng tối đa) |
+| 0x40-0x7F | Balance performance (Cân bằng hiệu năng) |
+| 0x80-0xBF | Balance power (Cân bằng điện năng (Giảm hiệu năng một chút) để tiết kiệm điện) |
+| 0xC0-0xFF | Max Power Saving (Tiết kiệm điện tối đa) |
 
-**Note**: Only Skylake and newer SMBIOS officially support EPP
+**Lưu ý**: Chỉ có SMBIOS Skylake và mới hơn mới hỗ trợ chính thức EPP
 
-### Performance Bias
+### Performance Bias (Thiên hướng hiệu năng)
 
 ![](../images/post-install/pm-md/pm-bias.png)
 
-This final entry is to help macOS out what kind of overall performance you'd like from your CPU. The general recommendation depends on your exact setup, and experimenting does help figure out what's best for you.
+Mục cuối cùng này giúp macOS hiểu bạn muốn CPU chạy với hiệu năng tổng thể như thế nào. Khuyến nghị chung phụ thuộc vào cấu hình cụ thể của bạn, việc thử nghiệm sẽ giúp tìm ra cái tốt nhất. Tức là nếu bạn chọn SMBIOS MacBook Pro thì máy tính có xu hướng giữ xung nhịp cao hơn tiêu chuẩn của Intel để chạy nhanh hơn khi tải thấp (cảm giác máy chạy bốc hơn), còn MacBook Air thì máy có xu hướng chạy với tốc độ thấp hơn để tránh máy bị quá nóng do thiết kế tản nhiệt hạn chế (máy chạy từ tốn).
 
-### Cleaning up
+
+### Tổng kết
 
 ![](../images/post-install/pm-md/done.png)
 ![](../images/post-install/pm-md/files.png)
 
-Once you're finished, you'll be provided with a CPUFriendDataProvider.kext and ssdt_data.aml. Which you choose is your preference but I recommend the kext variant to avoid any headaches with data injection into Windows and Linux.
+Xong xuôi hết thì bạn sẽ nhận được 2 tệp CPUFriendDataProvider.kext và ssdt_data.aml. Chọn cái nào là tùy bạn (sử dụng 1 trong 2) nhưng mình khuyên sử dụng dạng kext để tránh nhức đầu với vụ nạp dữ liệu vào Windows và Linux.
 
-* **Note**: Load order does not matter with the CPUFriendDataProvider as it's just a plist-only kext
-* **Note 2**: Wake issues resulting from CPUFriend are likely due to incorrect power management data. Every system is unique so you'll need to play around until you get a stable config. Kernel panics will have `Sleep Wake failure in efi`. Reusing power management data from old macOS versions can also cause issues, so recreate your data provider if you update macOS. You can create multiple data providers and use OpenCore's MinKernel/MaxKernel feature in order to load different power management data for each macOS version.
-* **Note 3**: If you do choose to use ssdt_data.aml, note that SSDT-PLUG is no longer needed. However the setup for this SSDT is broken on HEDT platforms like X99 and X299, so we highly recommend SSDT-PLUG with CPUFriendDataProvider.kext instead.
+* **Lưu ý**: Thứ tự load (nạp) không quan trọng với CPUFriendDataProvider vì nó chỉ là kext chứa file plist thôi.
+* **Lưu ý số 2**: Các vấn đề khi máy tính thức dậy (wake) sau khi xài CPUFriend thường là do dữ liệu điều phối điện năng bị sai. Mỗi hệ thống máy tính là độc nhất vô nhị nên bạn cần vọc vạch nhiệt tình một chút cho đến khi tìm được cấu hình ổn định. Nếu bị Kernel panic (màn hình xanh chết chóc của Mac) với lỗi `Sleep Wake failure in efi` thì chính là nó đó. Sử dụng lại dữ liệu điều phối điện năng của phiên bản macOS cũ cũng có thể gây lỗi, nên hãy tạo lại data provider (bộ cung cấp dữ liệu) nếu bạn cập nhật macOS. Bạn có thể tạo nhiều data provider và sử dụng tính năng MinKernel/MaxKernel của OpenCore để nạp dữ liệu khác nhau cho từng bản macOS.
+* **Lưu ý số 3**: Nếu bạn chọn sử dụng ssdt_data.aml, lưu ý là SSDT-PLUG không cần thiết nữa. Tuy nhiên cách thiết lập SSDT này gây lỗi trên các nền tảng máy tính HEDT (máy trạm/máy chủ) như X99 và X299, nên tụi mình cực lực khuyên xài SSDT-PLUG với CPUFriendDataProvider.kext như 1 lựa chọn thay thế.
 
-## Sandy and Ivy Bridge Power Management
+## Điều phối điện năng cho đời Sandy và Ivy Bridge
 
-With Sandy and Ivy Bridge, consumer PCs have issues connecting to Apple's XCPM. So to get around this we need to create our own Power Management Table.
+Với Sandy và Ivy Bridge, PC phổ thông hay gặp lỗi khi kết nối với XCPM của Apple. Để lách qua cái này, chúng ta cần tự tạo Bảng Điều phối Điện năng (Power Management Table) riêng.
 
-What we'll need:
+Đồ nghề cần có:
 
-* Ensure CpuPm and Cpu0Ist tables are **NOT** dropped
+* Bảo đảm bảng CpuPm và Cpu0Ist **KHÔNG BỊ** dropped (bỏ qua).
 * [ssdtPRGen](https://github.com/Piker-Alpha/ssdtPRGen.sh)
 
-Initially with the setup in the Ivy Bridge section, we recommended users drop their CpuPm and Cpu0Ist to avoid any issues with AppleIntelCPUPowerManagement.kext. But dropping these tables has the adverse affect of breaking turbo boost in Windows. So to resolve this, we'll want to keep our OEM's table but we'll want to add a new table to supplement data only for macOS. So once we're done creating our CPU-PM table, we'll re-add our OEM's CPU SSDTs.
+Ban đầu trong phần thiết lập Ivy Bridge, tụi mình khuyên bạn đọc tạm thời drop bảng CpuPm và Cpu0Ist để tránh lỗi với AppleIntelCPUPowerManagement.kext. Nhưng làm thoe phương pháp này gây tác dụng phụ là làm tính năng turbo boost trong Windows bị hư. Để sửa cái này, chúng ta sẽ giữ lại bảng của OEM (nhà sản xuất gốc) nhưng thêm một bảng mô tả mới để bổ sung dữ liệu chỉ dành cho macOS. Sau khi tạo xong bảng CPU-PM, chúng ta sẽ thêm lại các SSDT CPU gốc của OEM.
 
-To start, grab your config.plist then head to ACPI -> Delete and ensure both of these sections have `Enabled` set to YES:
+Bắt đầu nào, mở config.plist lên rồi vào ACPI -> Delete và đảm bảo cả hai mục này đều có `Enabled` set to YES:
 
 | Key | Type | Value |
 | :--- | :--- | :--- |
@@ -178,17 +179,17 @@ To start, grab your config.plist then head to ACPI -> Delete and ensure both of 
 | TableLength | Number | 0 |
 | TableSignature | Data | 53534454 |
 
-Once this is done, reboot, then grab ssdtPRGen and run it:
+Xong thì khởi động lại, tải ssdtPRGen về và chạy nó:
 
 ![](../images/post-install/pm-md/prgen-run.png)
 
-Once you're done, you'll be provided with an SSDT.aml under `/Users/your-name>/Library/ssdtPRGen/ssdt.dsl`, you can easily find it with the Cmd+Shift+G shortcut and pasting `~/Library/ssdtPRGen/`
+Chạy xong, bạn sẽ có một file SSDT.aml nằm ở `/Users/<tên-bạn>/Library/ssdtPRGen/ssdt.dsl`, bạn có thể tìm nhanh bằng tổ hợp phím Cmd+Shift+G và dán `~/Library/ssdtPRGen/` vào.
 
 ![](../images/post-install/pm-md/prgen-done.png)
 
-Remember to now add this to both EFI/OC/ACPI and your config.plist, I recommend renaming it to SSDT-PM to find it more easily.
+Nhớ thêm cái này vào cả thư mục EFI/OC/ACPI và config.plist của bạn nha, mình khuyên nên đổi tên nó thành SSDT-PM cho dễ tìm.
 
-Finally, we can disable our previous ACPI -> Delete entries (`Enabled` set to NO):
+Cuối cùng, chúng ta có thể vô hiệu hóa các mục trong ACPI -> Delete trước đó (`Enabled` set về NO):
 
 | Key | Type | Value |
 | :--- | :--- | :--- |
@@ -208,17 +209,17 @@ Finally, we can disable our previous ACPI -> Delete entries (`Enabled` set to NO
 | TableLength | Number | 0 |
 | TableSignature | Data | 53534454 |
 
-### ssdtPRgen Troubleshooting
+### Khắc phục sự cố ssdtPRgen (nếu có)
 
-While ssdtPRgen tries to handle any incompatibility issues with your OEM's SSDT, you may find it still clashes on boot as your OEM has already declared certain devices or methods in sections like `_INI` or `_DSM`.
+Mặc dù ssdtPRgen cố gắng xử lý mọi vấn đề không tương thích với SSDT của OEM, bạn có thể vẫn thấy nó "đá nhau" khi khởi động vì OEM của bạn đã khai báo sẵn một số thiết bị hoặc phương thức trong các phần như `_INI` hoặc `_DSM`.
 
-If you find during boot up you get errors such as this one from SSDT-PM:
+Nếu khi khởi động bạn thấy lỗi kiểu như này từ SSDT-PM:
 
 ```
 ACPI Error: Method parse/execution failed [\_SB._INI] , AE_ALREADY_EXIST
 ```
 
-This means there's some conflict, to resolve this, we recommend moving ssdtPRgen's info into a format like this:
+Nghĩa là có xung đột rồi, để giải quyết, mình khuyên bạn nên chuyển thông tin của ssdtPRgen sang định dạng như thế này:
 
 ```c
 DefinitionBlock ("ssdt.aml", "SSDT", 1, "APPLE ", "CpuPm", 0x00021500)
@@ -244,22 +245,22 @@ DefinitionBlock ("ssdt.aml", "SSDT", 1, "APPLE ", "CpuPm", 0x00021500)
     }
 ```
 
-Pay close attention to what we've done:
+Chú ý kỹ những gì chúng ta vừa làm:
 
-* Made sure the Processor object is moved to external
-* Move all your methods into the Processor's scope
+* Bảo đảm đối tượng Processor (Bộ xử lý) được chuyển sang external (bên ngoài).
+* Chuyển tất cả các phương thức của bạn vào trong scope (phạm vi) của Processor.
 
-For editing and re-compiling the SSDT-PM, see here: [Getting Started With ACPI](https://dortania.github.io/Getting-Started-With-ACPI/)
+Để chỉnh sửa và biên dịch lại SSDT-PM, đọc tại đây: [Khởi đầu với ACPI](https://dortania.github.io/Getting-Started-With-ACPI/)
 
-### BIOS Troubleshooting
+### Khắc phục sự cố trong BIOS
 
-For some boards, you may need to ensure the following BIOS options are set for CPU Power Management:
+Với một số bo mạch chủ, bạn có thể cần phải bảo đảm mấy cái cài đặt BIOS sau được thiết lập chuẩn cho Điều phối điện năng CPU:
 
 * C States: `True`
 * P States Coordination: `SW_ALL`
 
-## AMD CPU Power Management
+## Điều phối điện năng cho CPU AMD
 
-While macOS might not officially support AMD CPU power management, there are community efforts to add it, specifically being [AMDRyzenCPUPowerManagement](https://github.com/trulyspinach/SMCAMDProcessor).
+Mặc dù macOS không chính thức hỗ trợ tính năng điều phối điện năng cho CPU của AMD, cộng đồng đã nỗ lực thêm vào, cụ thể là kext [AMDRyzenCPUPowerManagement](https://github.com/trulyspinach/SMCAMDProcessor).
 
-**Warning**: This kext is known to be unstable, if you're receiving random kernel panics or issues booting do keep in mind this kext may be the culprit.
+**Cảnh báo**: Kext này nổi tiếng là không ổn định, nếu bạn gặp kernel panic ngẫu nhiên hoặc lỗi khi khởi động máy thì hãy nhớ rằng thủ phạm có thể là kext này đó.

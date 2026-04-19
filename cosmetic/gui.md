@@ -1,156 +1,156 @@
-# OpenCore beauty treatment
+# Chăm sóc sắc đẹp cho OpenCore
 
-Main thing this guide will go over:
+Phần này mình sẽ tập trung vào 2 món chính:
 
-* [Setting up OpenCore's GUI](#setting-up-opencores-gui)
-* [Setting up a boot-chime](#setting-up-boot-chime-with-audiodxe)
+* [Thiết lập giao diện đồ họa (GUI) cho OpenCore](#thiet-lap-giao-dien-đo-hoa-gui-cho-opencore)
+* [Cài đặt tiếng chuông khởi động](#cai-dat-tieng-chuong-khoi-dong-voi-audiodxe)
 
-## Setting up OpenCore's GUI
+## Thiết lập giao diện đồ họa (GUI) cho OpenCore
 
-So to get started, we're gonna need 0.5.7 or newer as these builds have the GUI included with the rest of the files. If you're on an older version, I recommend updating: [Updating OpenCore](../universal/update.md)
+Để bắt đầu, bạn cần OpenCore bản 0.5.7 trở lên vì các bản này mới tích hợp sẵn các file giao diện. Nếu đang xài bản cũ hơn thì nên cập nhật tại đây: [Cập nhật OpenCore](../universal/update.md)
 
-Once that's done, we'll need a couple things:
+Xong xuôi thì mình cần thêm vài "nguyên liệu" sau:
 
-* [Binary Resources](https://github.com/acidanthera/OcBinaryData)
-* [OpenCanopy.efi](https://github.com/acidanthera/OpenCorePkg/releases)
-  * Note: OpenCanopy.efi must be from the same build as your OpenCore files, as mismatched files can cause boot issues
+* [Dữ liệu hình ảnh/âm thanh hệ thống](https://github.com/acidanthera/OcBinaryData)
+* [Driver quản lý giao diện đồ hoạ: OpenCanopy.efi](https://github.com/acidanthera/OpenCorePkg/releases)
+  * Lưu ý: File OpenCanopy.efi phải cùng phiên bản với bộ OpenCore bạn đang dùng, lệch pha là dễ bị lỗi boot lắm nha.
 
-Once you have both of these, we'll next want to add it to our EFI partition:
+Có đủ rồi thì mình bỏ vô phân vùng EFI thôi:
 
-* Add the [Resources folder](https://github.com/acidanthera/OcBinaryData) to EFI/OC
-* Add OpenCanopy.efi to EFI/OC/Drivers
+* Giải nén dữ liệu hình ảnh/âm thanh hệ thống vừa tải rồi copy [thư mục Resources](https://github.com/acidanthera/OcBinaryData) vào trong thư mục EFI/OC
+* Copy file OpenCanopy.efi vào EFI/OC/Drivers
 
 ![](../images/extras/gui-md/folder-gui.png)
 
-Now in our config.plist, we have 4 things we need to fix:
+Bây giờ trong file config.plist, có 4 chỗ cần sửa:
 
-* `Misc -> Boot -> PickerMode`: `External`
+* `Misc -> Boot -> PickerMode`: `External` (Để OpenCore biết là mình muốn sử dụng gói giao diện mới cài đặt thay vì cái hiển thị giao diện bảng chọn màu đen trắng cổ điển).
 * `Misc -> Boot -> PickerAttributes`: `17`
-  * This enables mouse/trackpad support as well as .VolumeIcon.icns reading from the drive, allows for macOS installer icons to appear in the picker
-    * Other settings for PickerAttributes can be found in the [Configuration.pdf](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Configuration.pdf)
+  * Con số này giúp bật hỗ trợ chuột/trackpad cũng như đọc file icon .VolumeIcon.icns từ ổ đĩa, giúp bộ cài macOS hiện đúng icon đẹp đẽ.
+    * Các thiết lập khác cho PickerAttributes có thể tìm thấy trong file [Configuration.pdf](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Configuration.pdf)
 * `Misc -> Boot -> PickerVariant`: `Acidanthera\GoldenGate`
-  * Applicable variables:
-    * `Auto` — Automatically select one set of icons based on DefaultBackground colour.
-    * `Acidanthera\Syrah` — Normal icon set.
-    * `Acidanthera\GoldenGate` — Nouveau icon set.
-    * `Acidanthera\Chardonnay` — Vintage icon set.
-* `UEFI -> Drivers` and add OpenCanopy.efi
+  * Các bộ icon bạn có thể chọn:
+    * `Auto` — Tự động chọn icon dựa trên màu nền mặc định.
+    * `Acidanthera\Syrah` — Bộ icon tiêu chuẩn.
+    * `Acidanthera\GoldenGate` — Bộ icon kiểu mới (tân thời).
+    * `Acidanthera\Chardonnay` — Bộ icon kiểu cổ điển.
+* `UEFI -> Drivers` thêm file OpenCanopy.efi vào danh sách này.
 
-Once all this is saved, you can reboot and be greeted with a true Mac-like GUI:
+Lưu lại rồi khởi động lại máy, bạn sẽ thấy một giao diện cực kỳ "chanh sả" y hệt Mac xịn:
 
-| Default (Syrah) | Modern (GoldenGate) | Old (Chardonnay) |
+| Mặc định (Syrah) | Hiện đại (GoldenGate) | Cổ điển (Chardonnay) |
 | :--- | :--- | :--- |
 | ![](../images/extras/gui-md/gui.png) | ![](../images/extras/gui-md/gui-nouveau.png) | ![](../images/extras/gui-md/gui-old.png) |
 
-## Setting up Boot-chime with AudioDxe
+## Cài đặt tiếng chuông khởi động
 
-So to start, we'll need a couple of things:
+Để có tiếng "toong" huyền thoại khi khởi động macOS y chang con Mac thiệt, máy bạn cần đáp ứng các điều kiện sau:
 
-* Onboard audio output
-  * USB DACs will not work
-  * GPU audio out is a hit or miss
-* [AudioDxe](https://github.com/acidanthera/OpenCorePkg/releases) in both EFI/OC/Drivers and UEFI -> Drivers
-* [Binary Resources](https://github.com/acidanthera/OcBinaryData)
-  * Add the Resources folder to EFI/OC, just like we did with the OpenCore GUI section
-  * For those running out of space, `OCEFIAudio_VoiceOver_Boot.mp3` is all that's required for the Boot-Chime
-* Debug version of OpenCore with logging enabled
-  * See [OpenCore Debugging](https://dortania.github.io/OpenCore-Install-Guide/troubleshooting/debug.html) for more info
-  * Note: after you're done setting up, you can revert to the RELEASE builds
+* Phải là card âm thanh tích hợp trên mainboard (Onboard audio).
+  * DAC rời qua cổng USB thôi nghỉ chơi luôn.
+  * Âm thanh qua cổng HDMI/DP của card màn hình (GPU) thì hên xui.
+* File driver [AudioDxe](https://github.com/acidanthera/OpenCorePkg/releases) bỏ vào EFI/OC/Drivers và nhớ khai báo trong UEFI -> Drivers
+* [Dữ liệu hình ảnh/âm thanh hệ thống](https://github.com/acidanthera/OcBinaryData)
+  * Copy thư mục Resources vào EFI/OC giống như lúc làm giao diện cho OpenCore ở trên.
+  * Nếu phân vùng EFI trên máy bạn hết dung lượng, chỉ cần giữ lại file `OCEFIAudio_VoiceOver_Boot.mp3` là đủ để nghe tiếng chuông rồi.
+* Được thì nên xài bản OpenCore Debug để tiện theo dõi log.
+  * Đọc thêm [Gỡ lỗi OpenCore](https://baokhanhwithfriends.github.io/Huong-dan-cai-dat-OpenCore/troubleshooting/debug.html) để biết thêm chi tiết
+  * Lưu ý: Sau khi setup xong và nghe tiếng chuông rồi thì có thể quay về dùng bản RELEASE cho mượt.
 
-**Setting up NVRAM**:
+**Thiết lập NVRAM**:
 
 * NVRAM -> Add -> 7C436110-AB2A-4BBB-A880-FE41995C9F82:
   * `SystemAudioVolume | Data | 0x46`
-  * This is the boot-chime and screen reader volume, note it's in hexadecimal so would become `70` in decimal; `0x80` is mute
+  * Đây là mức âm lượng của chuông và trình đọc màn hình. Lưu ý nó ở hệ thập lục phân (hexadecimal), `0x46` tương đương với `70` ở hệ thập phân; `0x80` là tắt tiếng.
 
-::: details Optional NVRAM entries
+::: details Các mục NVRAM tùy chọn
 
 * NVRAM -> Add -> 7C436110-AB2A-4BBB-A880-FE41995C9F82:
   * `StartupMute | Data | 0x00`
-  * Mute startup chime sound in firmware audio support; `0x00` is unmuted, missing variable or any other value means muted
+  * Tắt tiếng chuông khởi động ở cấp độ vi chương trình (firmware); `0x00` là mở tiếng, nếu thiếu biến này hoặc đặt giá trị khác thì sẽ bị tắt tiếng.
 :::
 
-**Setting up UEFI -> Audio:**
+**Thiết lập UEFI -> Audio:**
 
-* **AudioCodec:** (Number)
-  * Codec address of Audio controller. This typically contains the first audio codec address on the builtin analog audio controller (HDEF). Failsafe value is 0.
-  * To find yours:
-    * Check [IORegistryExplorer](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip) -> HDEF -> AppleHDAController -> IOHDACodecDevice and see the `IOHDACodecAddress` property (ex: `0x0`)
-    * Can also check via terminal (Note if multiple show up, use the vendor ID to find the right device):
+* **AudioCodec:** (Giá trị Number)
+  * Địa chỉ Codec của bộ điều khiển âm thanh. Thường là địa chỉ đầu tiên của chip âm thanh tích hợp (HDEF). Giá trị mặc định an toàn là 0.
+  * Cách tìm:
+    * Dùng [IORegistryExplorer](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip) -> Tìm đến nhánh HDEF -> AppleHDAController -> IOHDACodecDevice và xem thuộc tính `IOHDACodecAddress` (VD: `0x0`)
+    * Hoặc kiểm tra qua Terminal (lưu ý nếu hiện ra nhiều cái, hãy sử dụng Vendor ID để tìm đúng thiết bị):
 
       ```sh
-      ioreg -rxn IOHDACodecDevice | grep VendorID   # List all possible devices
-      sh ioreg -rxn IOHDACodecDevice | grep IOHDACodecAddress # Grab the codec address
+      ioreg -rxn IOHDACodecDevice | grep VendorID   # Liệt kê tất cả các thiết bị có thể
+      sh ioreg -rxn IOHDACodecDevice | grep IOHDACodecAddress # Lấy địa chỉ codec
       ```
 
-* **AudioDevice:** (String)
-  * Device path (PciRoot) of audio controller
-  * Run [gfxutil](https://github.com/acidanthera/gfxutil/releases) to find the path:
-    * `/path/to/gfxutil -f HDEF`
-    * ex: `PciRoot(0x0)/Pci(0x1f,0x3)`
+* **AudioDevice:** (Giá trị String)
+  * Đường dẫn thiết bị (PciRoot) của bộ điều khiển âm thanh.
+  * Xài công cụ [gfxutil](https://github.com/acidanthera/gfxutil/releases) để tìm đường dẫn:
+    * `/đường/dẫn/đến/gfxutil -f HDEF`
+    * VD: `PciRoot(0x0)/Pci(0x1f,0x3)`
 
-* **AudioOutMask:** (Number)
-  * Play sound in UEFI to more than one channel (e.g. main speaker plus bass speaker). Failsafe value is `-1` (output to all).
-  * Output channels are internally numbered as bit `0` (value `1`), bit `1` (value `2`) and so on. A value of `1` refers to the first audio output (not necessarily main speaker). A value of `-1` is used to play to all channels simultaneously.
-  * When AudioSupport is enabled, AudioDevice must be either empty or a valid path and AudioOutMask must be non-zero
-  * Easiest way to find the right one is to go through each one (from 2^0 to 2^(N - 1), where N is the number of outputs listed in your log); ex: 5 outputs would translate to 1/2/4/8/16 (or a combination of these) as possible values
-  * You can find all the ones for your codec in the OpenCore debug logs:
+* **AudioOutMask:** (Giá trị Number)
+  * Phát âm thanh trong môi trường UEFI qua nhiều kênh (ví dụ: loa chính cộng với loa trầm). Giá trị mặc định là `-1` (phát ra tất cả).
+  * Các kênh đầu ra được đánh số nội bộ là bit `0` (giá trị `1`), bit `1` (giá trị `2`), v.v. Giá trị `1` biểu thị đầu ra âm thanh đầu tiên (không nhất thiết là loa chính). Giá trị `-1` được sử dụng để phát đồng thời trên tất cả các kênh.
+  * Khi AudioSupport được bật, AudioDevice phải trống hoặc là một đường dẫn hợp lệ và AudioOutMask phải khác không.
+  * Cách đơn giản nhất để tìm đúng kênh là thử từng cái một (từ 2^0 đến 2^(N - 1), với N là số lượng đầu ra hiện trong log); ví dụ: 5 đầu ra thì các giá trị có thể là 1/2/4/8/16.
+  * Bạn có thể tìm danh sách đầu ra của mình trong log debug của OpenCore:
 
     ```
     06:065 00:004 OCAU: Matching PciRoot(0x0)/Pci(0x1F,0x3)/VenMsg(A9003FEB-D806-41DB-A491-5405FEEF46C3,00000000)...
     06:070 00:005 OCAU: 1/2 PciRoot(0x0)/Pci(0x1F,0x3)/VenMsg(A9003FEB-D806-41DB-A491-5405FEEF46C3,00000000) (5 outputs) - Success
     ```
 
-* **AudioSupport:** (Boolean)
-  * Set this to `True`
-  * Enabling this setting routes audio playback from builtin protocols to specified dedicated audio ports (AudioOutMask) of the specified codec (AudioCodec), located on the specified audio controller (AudioDevice)
+* **AudioSupport:** (Gía trị Boolean)
+  * Đặt cái này thành `True`
+  * Việc bật cài đặt này sẽ định tuyến quá trình phát lại âm thanh từ các giao thức tích hợp sẵn đến các cổng âm thanh chuyên dụng được chỉ định (AudioOutMask) của codec được chỉ định (AudioCodec), nằm trên bộ điều khiển âm thanh được chỉ định (AudioDevice).
 
-* **DisconnectHDA:** (Boolean)
-  * Set this to `False`
+* **DisconnectHDA:** (Giá trị Boolean)
+  * Đặt thành `False`
 
-* **MaximumGain:** (Number)
-  * Maximum gain to use for UEFI audio, specified in decibels (dB) with respect to amplifier reference level of 0 dB
-  * Set this to `-15`
+* **MaximumGain:** (Giá trị Number)
+  * Mức khuếch đại tối đa được phép sử dụng cho âm thanh UEFI, được chỉ định bằng decibel (dB) so với mức tham chiếu của bộ khuếch đại là 0 dB.
+  * Đặt cái này thành `-15`
 
-* **MinimumAssistGain:** (Number)
+* **MinimumAssistGain:** (Giá trị Number)
   * Minimum gain in decibels (dB) to use for picker audio assist. The screen reader will use this amplifier gain if the system amplifier gain read from the SystemAudioVolumeDB NVRAM variable is lower than this
-  * Set this to `-30`
+  * Đặt cái này thành `-30`
 
-* **MinimumAudibleGain:** (Number)
-  * Minimum gain in decibels (dB) at which to attempt to play any sound
-  * Set this to `-55`
+* **MinimumAudibleGain:** (Giá trị Number)
+  * Mức tăng tối thiểu tính bằng decibel (dB) mà bạn có thể thử phát bất kỳ âm thanh nào.
+  * Đặt cái này thành `-55`
 
-* **PlayChime:** (String)
-  * Set this to `Enabled`
-  * Supported values are:
-    * `Auto` — Enables chime when StartupMute NVRAM variable is not present or set to 00
-    * `Enabled` — Enables chime unconditionally
-    * `Disabled` — Disables chime unconditionally
+* **PlayChime:** (Giá trị String)
+  * Đặt cái này thành `Enabled` (kích hoạt)
+  * Các giá trị hỗ trợ:
+    * `Auto` — Bật chuông khi biến StartupMute trong NVRAM không tồn tại hoặc bằng 00.
+    * `Enabled` — Luôn luôn mở chuông.
+    * `Disabled` — Luôn luôn tắt chuông.
 
-* **ResetTrafficClass:** (Boolean)
-  * Set this to `False`
+* **ResetTrafficClass:** (Giá trị Boolean)
+  * Đặt cái này thành `False` (vô hiệu hoá)
 
-* **SetupDelay:** (Number)
-  * By default, leave this at `0`
-  * Some codecs many need extra time for setup, we recommend setting to `500` milliseconds (0.5 seconds) if you have issues
+* **SetupDelay:** (Giá trị Number)
+  * Mặc định cứ để là `0`
+  * Một số chip âm thanh cần thêm thời gian để "khởi động", nếu gặp lỗi bạn có thể đặt thành `500` miligiây (tức 0.5 giây) nếu bạn gặp trục trặc
 
-Once done, you should get something like this:
+Xong xuôi thì bảng cấu hình của bạn trông sẽ giống vầy:
 
 ![](../images/extras/gui-md/audio-config.png)
 
-::: tip
+::: tip MẸO NHỎ
 
-There are codecs like Realtek ALC295 (HP and others) whose default audio sampling rate is 48 kHz. In this case, even if 44.1 kHz is supported by the codec, sound output fails. The only way at the moment to fix this is to change the sample rate of the `OCEFIAudio_VoiceOver_Boot.mp3` file with an audio editor to raise it from 44.1 kHz to 48 kHz. This has to be done manually as OpenCore does not have an automated mechanism for it.
+Có một số dòng chip như Realtek ALC295 (thường gặp trên máy HP) có tần số lấy mẫu (sampling rate) mặc định là 48 kHz. Trong trường hợp này, dù chip có hỗ trợ 44.1 kHz thì âm thanh vẫn có thể bị lỗi. Cách duy nhất hiện tại là bạn dùng phần mềm chỉnh sửa âm thanh để nâng tần số của file `OCEFIAudio_VoiceOver_Boot.mp3` từ 44.1 kHz lên 48 kHz nhé. Việc này phải được thực hiện thủ công vì OpenCore không có cơ chế tự động hóa nào cho việc đó.
 
 :::
 
-::: tip
+::: tip MẸO
 
-**Note for visually impaired**:
+**Lưu ý cho anh em khiếm thị**:
 
-* OpenCore hasn't forgotten about you! With the AudioDxe setup, you can enable both picker audio and FileVault VoiceOver with these 2 settings:
-  * `Misc -> Boot -> PickerAudioAssist -> True` to enable picker audio
-  * `UEFI -> ProtocolOverrides -> AppleAudio -> True` to enable FileVault voice over
-* See [Security and FileVault](../universal/security.md) on how to setup the rest for proper FileVault support.
+* OpenCore không hề bỏ quên các bạn đâu! Với AudioDxe, bạn có thể bật cả âm thanh hỗ trợ chọn ổ đĩa và tính năng VoiceOver của FileVault bằng 2 thiết lập này:
+  * `Misc -> Boot -> PickerAudioAssist -> True` để bật hỗ trợ âm thanh tại menu chọn.
+  * `UEFI -> ProtocolOverrides -> AppleAudio -> True` để bật VoiceOver cho FileVault.
+* Đọc thêm mục [Bảo mật và mã hóa ổ cứng bằng FileVault](../universal/security.md) để biết cách thiết lập đầy đủ cho FileVault hén.
 
 :::

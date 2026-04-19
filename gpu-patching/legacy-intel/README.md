@@ -1,56 +1,56 @@
-# Legacy Intel Setup
+# Thiết lập cho dòng iGPU Intel đời cũ
 
-Covers support for the following GPU models:
+Phần này hỗ trợ các mẫu GPU sau:
 
-* GMA 900 (10.4 and 10.5)
-  * Partial support in 10.6 and 10.7, however acceleration issues are common
-* GMA 950(10.4-10.7)
-  * GMA 3150's can be spoofed for support, however proper acceleration is missing
+* GMA 900 (10.4 và 10.5)
+  * Hỗ trợ một phần trên 10.6 và 10.7, tuy nhiên thường xuyên gặp lỗi acceleration (tăng tốc đồ họa).
+* GMA 950 (10.4-10.7)
+  * GMA 3150 có thể được spoof (giả mạo) để hỗ trợ, tuy nhiên sẽ mất khả năng tăng tốc phần cứng chuẩn.
 * GMA X3100(10.5-10.7)
-  * Note only mobile models(ie. 965 Express Chipset Family)
+  * Lưu ý là chỉ hỗ trợ các model mobile (laptop), ví dụ như 965 Express Chipset Family. Model cùng dòng có trên máy tính bàn không được hỗ trợ
 
-Please note this page is more of an info dump, we won't be going to too great of detail on setup though we plan to expand this page more for it. Information is based off of [Clover's InjectIntel](https://github.com/CloverHackyColor/CloverBootloader/blob/2961827dce9c0ab26345c00fb5a9c581f96c0d6b/rEFIt_UEFI/Platform/gma.cpp)
+Lưu ý nhẹ là trang này giống cái kho chứa thông tin hơn, tụi mình sẽ không đi quá sâu vào chi tiết thiết lập đâu, mặc dù có kế hoạch mở rộng trang này sau. Thông tin được dựa trên [Clover's InjectIntel](https://github.com/CloverHackyColor/CloverBootloader/blob/2961827dce9c0ab26345c00fb5a9c581f96c0d6b/rEFIt_UEFI/Platform/gma.cpp)
 
-## Prerequisites
+## Điều kiện tiên quyết
 
-Unfortunately GMA support is a bit more complicated with PCs, and because of this we need to force a 32-Bit kernelspace as the 64-Bit GMA drivers are known for weird GPU corruption and sleep issues. To do this:
+Xui cái là hỗ trợ GMA trên PC hơi bị khoai, và vì thế chúng ta cần ép chạy không gian nhân 32-Bit (32-Bit kernelspace) vì driver GMA 64-Bit nổi tiếng với mấy cái lỗi rác hình GPU dị dị và lỗi ngủ mà Apple mãi không chịu sửa. Để thực hiện, ta cần:
 
-* Ensure all your kexts are either 32-Bit or FAT
-  * Run `lipo -archs` on the kext's binary to verify
-  * Common kexts are hosted here: [Legacy-Kexts](https://github.com/khronokernel/Legacy-Kexts)
-* Ensure you're booting a 32-Bit kernel
+* Bảo đảm tất cả kext của bạn là 32-Bit hoặc FAT (hỗ trợ cả 32 và 64).
+  * Chạy lệnh `lipo -archs` trên file binary của kext để kiểm tra.
+  * Mấy cái kext phổ biến được lưu trữ ở đây: [Legacy-Kexts](https://github.com/khronokernel/Legacy-Kexts)
+* Bảo đảm bạn đang khởi động kernel 32-Bit.
   * Set `Kernel -> Scheme -> KernelArch` to `i386`
 
-Now we can proceed to setup:
+Giờ thì bắt tay vào thiết lập thôi:
 
-* [GMA 950 Setup](#gma-950-setup)
-  * Supports GMA 900, 950 and 3150
-* [GMA X3100 Setup](#gma-x3100-setup)
-  * Only supports mobile GMA X3100
-* [Troubleshooting](#troubleshooting)
-  * [Dell Laptops](#dell-laptops)
-  * [Kernel Panic after 30 seconds](#kernel-panic-after-30-seconds)
+* [Thiết lập GMA 950](#thiet-lap-gma-950)
+  * Hỗ trợ card màn hình onboard GMA 900, 950 và 3150
+* [Thiết lập GMA X3100](#gma-x3100-setup)
+  * Chỉ hỗ trợ card màn hình onboard GMA X3100 trên các dòng thiết bị mobile (laptop)
+* [Khắc phục sự cố](#khac-phuc-su-co)
+  * [Riêng Laptop Dell](#rieng-laptop-dell)
+  * [Lỗi Kernel Panic sau khi vào màn hình chính 30 giây](#loi-kernel-panic-sau-khi-vao-man-hinh-chinh-30-giay)
 
-## GMA 950 setup
+## Thiết lập GMA 950
 
-* Supported OSes: 10.4-10.7
+* Các hệ điều hành hỗ trợ: 10.4 - 10.7
 
-This section is mainly relevant for GMA 900 and 950 users, and partial support for the GMA 3150 series. Note that GMA 900 are only properly supported in 10.4 and 10.5
+Phần này dành cho bạn đọc có GMA 900 và 950, cũng hỗ trợ một phần cho dòng GMA 3150. Lưu ý là GMA 900 chỉ được hỗ trợ ngon lành trên 10.4 và 10.5 thôi nha.
 
-Within AppleIntelGMA950.kext's Info.plist, the following Device IDs are supported:
+Bên trong `Info.plist` của `AppleIntelGMA950.kext`, các Device ID sau được hỗ trợ:
 
 ```md
-# Values pulled from OS X 10.7.0
+# Các giá trị được trích xuất từ bộ cài OS X 10.7.0
 0x2582 - GMA 900 - Grantsdale - 945GM/GMS/940GML
 0x2592 - GMA 900 - Alviso     - 945G
 0x2772 - GMA 950 - Lakeport   - 915GM/GMS/910GML
 0x27A2 - GMA 950 - Calistoga  - 82915G/GV/910GL
 ```
 
-If your iGPU is from one of the above families, but the device ID is not present you can easily add a fake device-id:
+Nếu iGPU của bạn thuộc một trong các thế hệ chip trên, nhưng Device ID không có trong danh sách thì bạn có thể dễ dàng thêm một cái fake device-id (ID giả):
 
 ```md
-# GMA 950(Calistoga) Fake ID
+# ID giả cho GMA 950(Calistoga)
 config.plist:
 |-DeviceProperties
  |- Add
@@ -58,11 +58,11 @@ config.plist:
    |- device-id | Data | A2270000
 ```
 
-For a full list of supported GPU families, see below:
+Để xem danh sách đầy đủ các dòng GPU được hỗ trợ, xem bên dưới:
 
-::: details GMA Device families
+::: details Các dòng thiết bị GMA
 
-Following pulled from Clover's GMA.c:
+Thông tin lấy từ GMA.c của Clover:
 
 ```md
 # Grantsdale
@@ -86,37 +86,37 @@ Following pulled from Clover's GMA.c:
 
 :::
 
-### Property injection
+### Nạp thuộc tính
 
-To ensure proper acceleration with OpenCore, head to your config.plist then `DeviceProperties -> Add`. Create a new child called `PciRoot(0x0)/Pci(0x2,0x0)` and we'll be adding our needed properties:
+Để bảo đảm tăng tốc phần cứng (acceleration) ngon lành với OpenCore, mở `DeviceProperties -> Add`. Tạo một mục con mới tên là `PciRoot(0x0)/Pci(0x2,0x0)` và chúng ta sẽ bổ sung thêm các thuộc tính cần thiết để card đồ họa có thể chạy trơn tru:
 
-Desktops need very little properties, and most of the time can boot without any:
+Với máy bàn (Desktops) cần rất ít thuộc tính, đa số trường hợp có thể khởi động Mac OS X mà không cần nạp gì thêm cả:
 
-* Desktop:
+* Máy bàn:
 
 ```
-| model         | String | GMA 950  | // Mainly cosmetic
+| model         | String | GMA 950  | // Thêm cái này chủ yếu để làm màu
 | AAPL,HasPanel | Data   | 00000000 |
 ```
 
-* Laptop:
+* Laptop (máy tính xách tay):
 
 ```
-| model                     | String | GMA 950  | // Mainly cosmetic
+| model                     | String | GMA 950  | // Thêm cái này chủ yếu để làm màu
 | AAPL,HasPanel             |  Data  | 01000000 |
 | AAPL01,BacklightIntensity |  Data  | 3F000008 |
 | AAPL01,BootDisplay        |  Data  | 01000000 |
 | AAPL01,DataJustify        |  Data  | 01000000 |
 | AAPL01,DualLink           |  Data  | 00       |
 
-* Set AAPL01,DualLink to 01 if your internal display is higher than 1366x768
+* Chỉnh giá trị AAPL01,DualLink thành 01 nếu màn hình laptop của bạn có độ phân giải cao hơn 1366x768.
 ```
 
-For a full list of what Clover injects, see below:
+Để xem danh sách đầy đủ những gì Clover nạp vào, xem bên dưới:
 
-::: details Clover's InjectIntel Properties
+::: details Các thuộc tính InjectIntel của Clover
 
-The below properties is what Clover will inject for GMA 900/950 series iGPUs:
+Các thuộc tính bên dưới là những gì Clover sẽ nạp cho iGPU dòng GMA 900/950:
 
 ```
 | built-in                  | Data | 01       |
@@ -144,11 +144,11 @@ The below properties is what Clover will inject for GMA 900/950 series iGPUs:
 
 :::
 
-For GMA 3150 users, you'll also want to add this patch:
+Với người dùng GMA 3150, bạn cũng sẽ cần thêm bản vá này:
 
-::: details GMA 3150 Patch
+::: details Bản vá cho GMA 3150
 
-Under Kernel -> Patch, add the following:
+Dưới mục Kernel -> Patch, bổ sung thêm cái này vào:
 
 ```
 Comment    = GMA 3150 Cursor corruption fix
@@ -160,25 +160,25 @@ MaxKernel  = 11.99.99
 MinKernel  = 8.00.00
 ```
 
-Source: [GMA.c](https://github.com/CloverHackyColor/CloverBootloader/blob/2961827dce9c0ab26345c00fb5a9c581f96c0d6b/rEFIt_UEFI/Platform/gma.cpp#L1735L1739)
+Nguồn: [GMA.c](https://github.com/CloverHackyColor/CloverBootloader/blob/2961827dce9c0ab26345c00fb5a9c581f96c0d6b/rEFIt_UEFI/Platform/gma.cpp#L1735L1739)
 
 :::
 
-## GMA X3100 Setup
+## Thiết lập GMA X3100
 
-* Supported OSes: 10.5-10.7
+* Các hệ điều hành hỗ trợ: 10.5 - 10.7
 
-Within AppleIntelGMAX3100.kext's Info.plist, the following Device IDs are supported:
+Bên trong `Info.plist` của `AppleIntelGMAX3100.kext`, các Device ID sau được hỗ trợ:
 
 ```md
-# Values pulled from OS X 10.7.0
+# Các giá trị được trích xuất từ bộ cài OS X 10.7.0
 0x2a02 - GMA X3100 - Crestline - GM965/GL960
 ```
 
-If your iGPU is from the Crestline family, however the device ID is not present you can easily add a fake device-id:
+Nếu iGPU của bạn thuộc dòng Crestline, nhưng Device ID không có thì cứ fake ID thôi:
 
 ```md
-# GMA X3100(Crestline) Fake ID
+# ID giả cho GMA X3100(Crestline)
 config.plist:
 |-DeviceProperties
  |- Add
@@ -186,11 +186,11 @@ config.plist:
    |- device-id | Data | 022A0000
 ```
 
-For a full list of supported GPU families, see below:
+Để xem danh sách đầy đủ các dòng GPU được hỗ trợ, xem bên dưới:
 
-::: details GMA Device families
+::: details Các dòng thiết bị GMA
 
-Following pulled from Clover's GMA.c:
+Thông tin lấy từ GMA.c của Clover:
 
 ```md
 # Calistoga
@@ -202,31 +202,31 @@ Following pulled from Clover's GMA.c:
 
 :::
 
-### Property injection
+### Nạp thuộc tính
 
-To ensure proper acceleration with OpenCore, head to your config.plist then `DeviceProperties -> Add`. Create a new child called `PciRoot(0x0)/Pci(0x2,0x0)` and we'll be adding our needed properties:
+Để bảo đảm tăng tốc phần cứng (acceleration) ngon lành với OpenCore, mở `DeviceProperties -> Add`. Tạo một mục con mới tên là `PciRoot(0x0)/Pci(0x2,0x0)` và chúng ta sẽ bổ sung thêm các thuộc tính cần thiết để card đồ họa có thể chạy trơn tru:
 
-X3100 need very little properties, and most of the time can boot without any:
+Với X3100, đa số trường hợp có thể khởi động Mac OS X mà không cần nạp gì thêm cả:
 
 ```
-| model                     | String | GMA X3100 | // Mainly cosmetic
+| model                     | String | GMA X3100 | // Thêm cái này chủ yếu để làm màu
 | AAPL,HasPanel             |  Data  | 01000000  |
-| AAPL,SelfRefreshSupported |  Data  | 01000000  | // Optional
-| AAPL,aux-power-connected  |  Data  | 01000000  | // Optional
-| AAPL,backlight-control    |  Data  | 01000008  | // Optional
+| AAPL,SelfRefreshSupported |  Data  | 01000000  | // Tùy chọn
+| AAPL,aux-power-connected  |  Data  | 01000000  | // Tùy chọn
+| AAPL,backlight-control    |  Data  | 01000008  | // Tùy chọn
 | AAPL01,BacklightIntensity |  Data  | 38000008  |
 | AAPL01,BootDisplay        |  Data  | 01000000  |
 | AAPL01,DataJustify        |  Data  | 01000000  |
 | AAPL01,DualLink           |  Data  | 00        |
 
-* Set AAPL01,DualLink to 01 if your internal display is higher than 1366x768
+* Chỉnh giá trị AAPL01,DualLink thành 01 nếu màn hình laptop của bạn có độ phân giải cao hơn 1366x768.
 ```
 
-For a full list of what Clover injects, see below:
+Để xem danh sách đầy đủ những gì Clover nạp vào, xem bên dưới:
 
-::: details Clover's InjectIntel Properties
+::: details Các thuộc tính InjectIntel của Clover
 
-The below properties is what Clover will inject for GMA 900/950 series iGPUs:
+Các thuộc tính bên dưới là những gì Clover sẽ nạp cho iGPU dòng GMA 900/950:
 
 ```
 | built-in                       | Data | 01       |
@@ -259,13 +259,13 @@ The below properties is what Clover will inject for GMA 900/950 series iGPUs:
 
 :::
 
-## Troubleshooting
+## Khắc phục sự cố
 
-### Dell laptops
+### Riêng Laptop Dell
 
-An annoying issues with Dell laptops using GMA iGPUs is that they commonly get blackscreen during boot. This is due to the `DVI` device in ACPI, so we'll need to patch it to play nicely in macOS.
+Một vấn đề khá ức chế với laptop Dell dùng iGPU GMA là chúng thường xuyên bị đen màn hình khi khởi động. Nguyên nhân là do thiết bị `DVI` được khai báo trong ACPI, nên chúng ta cần vá lại nó để nó "chơi đẹp" với macOS.
 
-Example SSDT:
+Ví dụ cho bản vá SSDT:
 
 ```c
 DefinitionBlock ("", "SSDT", 2, "DRTNIA", "SsdtDvi", 0x00001000)
@@ -288,14 +288,14 @@ DefinitionBlock ("", "SSDT", 2, "DRTNIA", "SsdtDvi", 0x00001000)
     }
 ```
 
-### Kernel Panic after 30 seconds
+### Lỗi Kernel Panic sau khi vào màn hình chính 30 giây
 
-Another odd issues with 10.6 and older is that the PciRoot's _UID value **must** be Zero else the kernel panic will happen. Example of bad UID entry:
+Một lỗi dị khác với 10.6 và cũ hơn là giá trị `_UID` của PciRoot **bắt buộc** phải là Zero (Số 0) nếu không thì sẽ ăn ngay cái kernel panic. Ví dụ về mục UID lởm:
 
 ```c
 Device (PCI0)  {
- Name (_HID, EisaId ("PNP0A08")) // Use PNP0A08 to find your PciRoot
+ Name (_HID, EisaId ("PNP0A08")) // Lấy PNP0A08 để tìm PciRoot của bạn
  Name (_CID, EisaId ("PNP0A03"))
  Name (_ADR, One)
- Name (_UID, Zero)               // Needs to be patched to Zero
+ Name (_UID, Zero)               // Cần phải vá thành Zero - Số 0
 ```

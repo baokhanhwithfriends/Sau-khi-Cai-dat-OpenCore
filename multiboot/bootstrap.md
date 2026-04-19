@@ -1,77 +1,77 @@
-# Using LauncherOption
+# Thiết lập tùy chọn trình khởi chạy LauncherOption 
 
-* Note: With OpenCore 0.6.6, Bootstrap.efi has been replaced with LauncherOption. See here for more info on updating: [Updating Bootstrap in 0.6.6](#updating-bootstrap-in-0-6-6)
+* Lưu ý: Từ OpenCore 0.6.6, file Bootstrap.efi đã được thay thế bằng LauncherOption: [Cập nhật Bootstrap trong bản 0.6.6](#cap-nhat-bootstrap-trong-ban-0-6-6)
 
-With OpenCore 0.6.6 and newer, we are now able to launch OpenCore directly from our firmwares without needing a launcher (Bootstrap.efi or BOOTx64.efi) as an intermediary. This allows us to add OpenCore to our motherboard's boot menu and prevent issues where either Windows or Linux try to overwrite the `EFI/BOOT/BOOTx64.efi` path, which can happen when installing or updating Windows and therefore breaking OpenCore's ability to boot.
+Với OpenCore 0.6.6 trở đi, chúng ta có thể khởi động thẳng OpenCore từ phần sụn (firmware) của máy mà không cần qua trung gian (như Bootstrap.efi hay BOOTx64.efi). Việc này giúp thêm OpenCore vào menu boot của mainboard một cách chính thống, ngăn mấy ông Windows hay Linux "ngứa tay" ghi đè lên đường dẫn `EFI/BOOT/BOOTx64.efi` mỗi khi cập nhật hệ điều hành, làm hư khả năng boot vào OpenCore.
 
-## Prerequisites
+## Điều kiện tiên quyết
 
 ![](../images/bootstrap-md/config.png)
 
-* [OpenCore 0.6.6 or newer](https://github.com/acidanthera/OpenCorePkg/releases)
-  * For 0.6.5 and older users upgrading, see here: [Updating Bootstrap in 0.6.6](#updating-bootstrap-in-0-6-6)
-* config.plist settings:
+* [OpenCore phiên bản 0.6.6 hoặc mới hơn](https://github.com/acidanthera/OpenCorePkg/releases)
+  * Với phiên bản 0.6.5 hoặc cũ hơn đề nghị bạn nâng cấp lên, đọc tại đây: [Cập nhật Bootstrap trong bản 0.6.6](#cap-nhat-bootstrap-trong-ban-0-6-6)
+* Thiết lập trong file config.plist:
   * `Misc -> Boot -> LauncherOption` = `Full`
-    * Use `Short` for Insyde based firmwares, commonly found on laptops
+    * Xài giá trị `Short` cho các dòng mainboard Insyde (thường thấy trên laptop).
   * `UEFI -> Quirks -> RequestBootVarRouting` = `True`
 * [OpenShell](https://github.com/acidanthera/OpenCorePkg/releases)
-  * Bundled with OpenCore
-  * Remember to add this to both EFI/OC/Tools and `Misc -> Tools`
-  * This is mainly for troubleshooting
+  * Đã được tích hợp vô OpenCore
+  * Nhớ thêm nó vào cả thư mục EFI/OC/Tools và mục `Misc -> Tools` trong file cấu hình
+  * Cái này chủ yếu dùng để "cứu net" khi có sự cố thôi
 
-## Booting
+## Khởi động
 
-If everything is set up correctly, the first boot will have OpenCore create a new boot option in our BIOS (pointing to `EFI/OC/OpenCore.efi`) and future boots will update the entry making sure it's correct and ensuring it is still present. This now allows us to remove BOOTx64.efi and not worry about other OSes overwriting the `EFI/BOOT/BOOTx64.efi` path.
+Nếu mọi thứ đã chuẩn, lần khởi động đầu tiên OpenCore sẽ tự tạo một tùy chọn boot mới trong BIOS (trỏ thẳng tới `EFI/OC/OpenCore.efi`) Các lần boot sau nó sẽ tự kiểm tra và cập nhật để đảm bảo tùy chọn này luôn tồn tại. Giờ bạn có thể xóa luôn file BOOTx64.efi đi cho sạch ổ đĩa mà không lo `EFI/BOOT/BOOTx64.efi` bị các hệ điều hành khác "cướp quyền" khởi động.
 
-## Troubleshooting
+## Khắc phục sự cố
 
-If no new boot option is created, you can follow these troubleshooting steps but first double-check the prerequisites were met. The following sections are a mini-guide in case LauncherOption doesn't work or you'd like to do it manually.
+Nếu khởi động lại mà không thấy tùy chọn boot mới nào, hãy kiểm tra kỹ lại các điều kiện cần ở trên. Dưới đây là hướng dẫn nhanh nếu LauncherOption không tự chạy hoặc bạn muốn làm thủ công.
 
-* [Verify LauncherOption entry was applied](#verify-launcheroption-entry-was-applied)
-* [Removing LauncherOption entry from BIOS](#removing-launcheroption-entry-from-bios)
+* [Kiểm tra việc áp dụng LauncherOption](#kiem-tra-viec-ap-dung-launcheroption)
+* [Xóa LauncherOption khỏi BIOS](#xoa-launcheroption-khoi-bios)
 
-### Verify LauncherOption entry was applied
+### Kiểm tra việc áp dụng LauncherOption
 
-For those wanting to verify that the entry was applied in OpenCore, enable logging (see [OpenCore Debugging](https://dortania.github.io/OpenCore-Install-Guide/troubleshooting/debug.html)) and check for entries similar to these:
+Để xác nhận, bạn bật tính năng ghi log của OpenCore (xem [OpenCore Debugging](https://dortania.github.io/OpenCore-Install-Guide/troubleshooting/debug.html)) và tìm mấy dòng giống vầy:
 
 ```
 OCB: Have existing option 1, valid 1
 OCB: Boot order has first option as the default option
 ```
 
-### Removing LauncherOption entry from BIOS
+### Xóa LauncherOption khỏi BIOS 
 
-Because the LauncherOption entry is a protected entry when resetting NVRAM, you'll need to disable `LauncherOption` first before you can remove it:
+Vì LauncherOption là một mục được bảo vệ khi bạn Reset NVRAM, nên bạn phải tắt `LauncherOption` đi trước khi muốn xóa hẳn:
 
 * `Misc -> Security -> AllowNvramReset -> True`
 * `Misc -> Boot -> LauncherOption -> Disabled`
 
-Once these are set, you can reboot into the OpenCore picker and select the `Reset NVRAM` entry to clear your NVRAM, which will remove the LauncherOption entry too..
+Chỉnh xong thì reboot vào menu OpenCore, chọn mục `Reset NVRAM` để dọn sạch bộ nhớ, lúc này mục LauncherOption cũng sẽ biến mất.
 
-## Updating Bootstrap in 0.6.6
+## Cập nhật Bootstrap trong bản 0.6.6
 
-For those updating to 0.6.6, you may have noticed `Bootstrap.efi` has been removed from OpenCore. This is due to changes with how OpenCore works; specifically OpenCore is now a UEFI application instead of a driver. This means `OpenCore.efi` can be loaded directly and a launcher (Bootstrap.efi) is no longer needed.
+Khi lên đời 0.6.6, bạn sẽ thấy file `Bootstrap.efi` Đó là vì OpenCore giờ đã là một ứng dụng UEFI thực thụ chứ không còn là một driver (trình điều khiển) nữa. Điều này có nghĩa là máy có thể nạp trực tiếp `OpenCore.efi` mà không cần "ông mồi" Bootstrap.efi nữa.
 
-### With Bootstrap disabled
+### Nếu trước đó bạn KHÔNG mở Bootstrap
 
-If Bootstrap is disabled prior to updating to 0.6.6, you don't need to make any changes, just the usual file swapping. If afterwards you would like to try `LauncherOption`, you can do so with no issues.
+Nếu Bootstrap bị vô hiệu hóa trước khi cập nhật lên phiên bản 0.6.6, bạn không cần thực hiện bất kỳ thay đổi nào, chỉ cần thay file mới vào là xong như thường lệ. Nếu sau đó bạn muốn thử `LauncherOption`, bạn có thể thử mà không gặp vấn đề gì.
 
-### With Bootstrap enabled
+### Nếu trước đó bạn CÓ mở Bootstrap
 
-If Bootstrap is enabled prior to updating to 0.6.6, and your motherboard's firmware will autodetect `EFI/BOOT/BOOTx64.efi`, you can do the following before you update:
+Nếu Bootstrap được mở trước khi cập nhật lên phiên bản 0.6.6 và firmware của bo mạch chủ tự động phát hiện `EFI/BOOT/BOOTx64.efi`, bạn có thể thực hiện các bước sau trước khi cập nhật:
 
-1. Set `Misc -> Security -> AllowNvramReset` to `True` and `Misc -> Security -> BootProtect` to `None`, then reset NVRAM (either outside of or in OpenCore) and boot. This will get rid of the old Bootstrap boot entry.
-2. Update your OpenCore setup as normal, ensuring that you copy BOOTx64.efi from the OpenCore package to `EFI/BOOT/BOOTx64.efi` and set `Misc -> Boot -> LauncherOption` in your config.plist to `Full` (or `Short` if previously using `BootstrapShort`).
-3. Reboot.
+1. Đặt `Misc -> Security -> AllowNvramReset` thành `True` và `Misc -> Security -> BootProtect` thành `None`, sau đó đặt lại NVRAM (bên ngoài hoặc trong OpenCore) và khởi động lại. Việc này giúp xóa sạch dấu vết của Bootstrap cũ.
+2. Cập nhật thiết lập OpenCore như bình thường, đảm bảo bạn sao chép BOOTx64.efi từ gói OpenCore vào `EFI/BOOT/BOOTx64.efi` và đặt `Misc -> Boot -> LauncherOption` trong config.plist thành `Full` (hoặc `Short` nếu trước đó sử dụng `BootstrapShort`).
+3. Khởi động lại máy tính.
 
-   On first boot you will need to boot from `EFI/BOOT/BOOTx64.efi`, but on subsequent boots you should see the LauncherOption entry created by OpenCore directly booting `OpenCore.efi`.
+Lần khởi động đầu tiên, bạn cần khởi động từ `EFI/BOOT/BOOTx64.efi`, nhưng ở những lần khởi động tiếp theo, bạn sẽ thấy mục LauncherOption được tạo bởi OpenCore khi khởi động trực tiếp từ `OpenCore.efi`.
 
-If your firmware does not automatically detect `EFI/BOOT/BOOTx64.efi` or you cannot put OpenCore's launcher there for any reason, you have multiple other options:
+Nếu firmware của bạn không tự động nhận diện `EFI/BOOT/BOOTx64.efi` hoặc vì bất kỳ lý do nào mà bạn không thể đặt trình khởi chạy của OpenCore vào đó, bạn có nhiều lựa chọn khác:
 
-* Put `OpenShell.efi` on a USB, rename and move to `EFI/BOOT/BOOTx64.efi`, and follow the above steps, except instead of selecting `BOOTx64.efi` from the boot menu, boot into the USB and launch OpenCore from there directly.
-* Add a folder `EFI/OC/Bootstrap` and copy and rename BOOTx64.efi from the OpenCore package to `EFI/OC/Bootstrap/Bootstrap.efi`. Then, after updating your OpenCore setup, set `Misc -> Boot -> LauncherOption` to the appropriate option (`Full`, or `Short` if previously using `BootstrapShort`) and boot OpenCore using the existing entry create by Bootstrap. After your first boot, you should see a new OpenCore boot entry added. You can then reset NVRAM in OpenCore (making sure to keep `LauncherOption` enabled so you don't delete the new entry) to get rid of the old Bootstrap boot entry.
+* Sao chép file `OpenShell.efi` vào USB, đổi tên và di chuyển đến thư mục `EFI/BOOT/BOOTx64.efi`, sau đó làm theo các bước trên, nhưng thay vì chọn `BOOTx64.efi` từ menu khởi động, hãy khởi động từ USB và chạy OpenCore trực tiếp từ đó.
+* Thêm thư mục `EFI/OC/Bootstrap` và sao chép rồi đổi tên tệp BOOTx64.efi từ gói OpenCore thành `EFI/OC/Bootstrap/Bootstrap.efi`. Sau đó, sau khi cập nhật thiết lập OpenCore, hãy đặt `Misc -> Boot -> LauncherOption` thành tùy chọn phù hợp (`Full` hoặc `Short` nếu trước đó sử dụng `BootstrapShort`) và khởi động OpenCore bằng mục hiện có được tạo bởi Bootstrap. Sau lần khởi động đầu tiên, bạn sẽ thấy một mục khởi động OpenCore mới được thêm vào. Sau đó, bạn có thể đặt lại NVRAM trong OpenCore (bảo đảm giữ `LauncherOption` đang mở để không xóa mục mới) để loại bỏ mục khởi động Bootstrap cũ.
 
-Conversion notes:
+Bảng tra cứu nhanh khi chuyển đổi:
 
 | 0.5.8 - 0.6.5 | 0.6.6+ |
 | :--- | :--- |

@@ -1,47 +1,47 @@
-# Patching Connector Types
+# Vá chuẩn kết nối màn hình
 
-* Images and info based off [CorpNewt's Vanilla Guide](https://hackintosh.gitbook.io/-r-hackintosh-vanilla-desktop-guide/config.plist-per-hardware/coffee-lake#pink-purple-tint)
+* Hình ảnh và thông tin dựa trên bài viết [Hướng dẫn Hackintosh Vanilla của CorpNewt](https://hackintosh.gitbook.io/-r-hackintosh-vanilla-desktop-guide/config.plist-per-hardware/coffee-lake#pink-purple-tint)
 
-This section is mainly relevant for users who either get black screen or incorrect color output on their displays(usually HDMI ports). This is due to Apple forcing display types onto your hardware,. To work around it, we'll patch Apple's connector types to properly respect our hardware.
+Phần này dành cho các dân chơi Hackintosh bị lỗi màn hình đen thui hoặc màu sắc hiển thị sai bét nhè (thường là cổng HDMI). Nguyên nhân là do driver Apple được lập trình để nạp cấu hình chuẩn kết nối màn hình theo ý họ lên trên phần cứng của bạn (VD: màn hình của bạn có chuẩn kết nối HDMI nhưng macOS nạp cấu hình DisplayPort gây ra lỗi). Để xử lý, chúng ta sẽ vá lại các loại kết nối (connector types) của Apple để nó "tôn trọng" phần cứng của chúng ta hơn.
 
-For this example, let's take a UHD 630 system with an HDMI display attached. The machine has already been correctly setup however there's a Pink/Purple tint on the HDMI display.
+Ví dụ, hãy lấy một cái máy tính xài UHD 630 đang cắm màn hình HDMI. Máy đã cài đặt ngon lành cành đào nhưng màn hình HDMI đang bị ám màu hồng mộng mơ hoặc tím lịm tìm sim (Pink/Purple tint).
 
-Grab a copy of [IOReg](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip) and search for the `iGPU` entry:
+Giờ chúng ta cần lôi cổ cái [IOReg](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip) và tìm mục `iGPU`:
 
 ![](../../images/gpu-patching/igpu-entry.png)
 
-Next, clear out the entry so we can see the children of the iGPU device:
+Tiếp theo, xóa cái khung tìm kiếm đi để chúng ta có thể thấy các mục con (children) của thiết bị iGPU:
 
 ![](../../images/gpu-patching/igpu-children.png)
 
-As we can see in the above screenshot, we have a few framebuffer entries listed. These are all display personalities present in the framebuffer personality, and all have their own settings.
+Như bạn thấy trong hình trên, chúng ta có vài mục framebuffer được liệt kê. Đây đều là các "nhân cách" hiển thị (display personalities) có trong framebuffer, và mỗi cái có cài đặt riêng.
 
-For us, we care about the entries that have a `display0` child, as this is what's driving a physical display. In this example, we can see it's `AppleIntelFramebuffer@1`. When we select it, you'll see in the left pane it has the property `connector-type` with the value `<00 04 00 00>`. And when we look to the below list:
+Với chúng ta, cái cần quan tâm là phần nào có mục con là `display0` vì đây chính là thứ đang "điều khiển" trực tiếp cái màn hình vật lý. Trong ví dụ này, chúng ta thấy nó là `AppleIntelFramebuffer@1`. Khi chọn vào nó, bạn nhìn sang khung bên trái sẽ thấy thuộc tính  `connector-type` có giá trị là `<00 04 00 00>`. Và khi chúng ta đối chiếu với danh sách bên dưới:
 
 ```
-<02 00 00 00>        LVDS and eDP      - Laptop displays
-<10 00 00 00>        VGA               - Unsupported in 10.8 and newer
-<00 04 00 00>        DisplayPort       - USB-C display-out are DP internally
-<01 00 00 00>        DUMMY             - Used when there is no physical port
+<02 00 00 00>        LVDS và eDP       - Màn hình Laptop
+<10 00 00 00>        VGA               - Không còn hỗ trợ chính thức trên bản 10.8 trở đi
+<00 04 00 00>        DisplayPort       - Cổng xuất hình USB-C thực chất là giao thức DP
+<01 00 00 00>        DUMMY             - Sử dụng khi không có cổng vật lý được cắm vô
 <00 08 00 00>        HDMI
 <80 00 00 00>        S-Video
 <04 00 00 00>        DVI (Dual Link)
 <00 02 00 00>        DVI (Single Link)
 ```
 
-* Note: VGA on Skylake and newer are DisplayPorts internally and so are supported by macOS. Please use the DisplayPort connector for these systems.
+* Lưu ý: Cổng VGA trên máy tính đời Skylake và mới hơn thực chất có giao thức bên trong là DisplayPort thay vì VGA nên macOS vẫn hỗ trợ. Bạn vui lòng dùng loại kết nối DisplayPort cho mấy cái máy tính có cổng này.
 
-Looking closer, we see that the HDMI port was actually listed as a DisplayPort. This is where WhateverGreen's patching mechanisms come into play.
+Soi kỹ hơn chút, chúng ta thấy cổng HDMI thực tế đang được liệt kê là DisplayPort (trớt quớt). Đây chính là lúc cơ chế vá lỗi của WhateverGreen tỏa sáng.
 
-Since the incorrect port was located at AppleIntelFramebuffer@1, this is port 1. Next we'll to enable WhateverGreen's patching mechanism for con1, and then set the connector type to HDMI. To do this,  we set the following Properties under `DeviceProperties -> Add -> PciRoot(0x0)/Pci(0x2,0x0)`:
+Vì cái cổng đang bị nhận diện sai chuẩn kết nối nằm ở AppleIntelFramebuffer@1, nên đây là port 1 (cổng số 1). Tiếp theo chúng ta sẽ bật cơ chế vá lỗi của WhateverGreen cho con1 và sau đó set loại kết nối thành HDMI. Để làm điều này, chúng ta thiết lập các Thuộc tính sau dưới mục `DeviceProperties -> Add -> PciRoot(0x0)/Pci(0x2,0x0)`:
 
 * `framebuffer-patch-enable = 01000000`
-  * Enables WhateverGreen's patching mechanism
+  * Kích hoạt cơ chế vá lỗi của WhateverGreen.
 * `framebuffer-conX-enable = 01000000`
-  * Enables WhateverGreen's patching on conX
+  * Kích hoạt cơ chế vá lỗi của WhateverGreen trên cổng conX. X là thứ tự của cổng.
 * `framebuffer-conX-type = 00080000`
-  * Sets the port to HDMI(`<00 08 00 00>`)
+  * Chuyển cổng đó thành HDMI (`<00 08 00 00>`). Nếu máy của bạn là chuẩn kết nối khác thì bạn đổi cặp byte ở trên thành cái tương ứng với cổng kết nối màn hình trên máy tính của bạn
 
-Note: Remember to replace the `conX` in both patches with `con1` to reflect the port that we want fixed, then set the values as listed above.
+Lưu ý: Nhớ thay thế `conX` trong cả hai bản vá thành `con1` để phản ánh đúng cái cổng chúng ta muốn sửa, sau đó điền giá trị như liệt kê ở trên.
 
 ![](../../images/gpu-patching/connector-type-patch.png)

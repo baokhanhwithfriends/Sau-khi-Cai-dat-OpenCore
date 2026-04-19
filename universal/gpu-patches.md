@@ -1,25 +1,25 @@
-# GPU Patching
+# Vá lỗi card đồ họa (cơ bản)
 
-This little section is for those who need more than what is provided by simple framebuffer patching and WhateverGreen's auto-patches:
+Cái mục nhỏ xíu này dành cho mấy bác cần nhiều "thuốc" hơn là mấy bản vá framebuffer (bộ đệm khung hình) đơn giản và mấy cái tự động của WhateverGreen:
 
-* [Applying a fakeID for unsupported GPUs](https://dortania.github.io/Getting-Started-With-ACPI/Universal/spoof.html)
-* [iGPU BusID patching for 300 series motherboards](#iGPU-BusID-Patching)
+* [Chuyển đổi ID giả mạo từ Clover sang OpenCore](https://baokhanhwithfriends.github.io/Khoi-dau-voi-ACPI/Universal/spoof.html)
+* [Vá lỗi BusID cho iGPU đời mainboard 300 series](#iGPU-BusID-Patching)
 
-## Converting a clover fakeID to OpenCore
+## Chuyển đổi ID giả mạo từ Clover sang OpenCore
 
-Guide moved here: [Renaming GPUs](https://dortania.github.io/Getting-Started-With-ACPI/Universal/spoof.html)
+Hướng dẫn đã chuyển nhà sang đây: [Đổi tên đường dẫn GPU](https://baokhanhwithfriends.github.io/Khoi-dau-voi-ACPI/Universal/spoof.html)
 
-## iGPU BusID Patching
+## Vá lỗi BusID cho iGPU
 
-This section is for users running "true" 300 series motherboards( B360, B365, H310, H370, Z390) who are having issues setting up their iGPU as a display out.
+Phần này dành riêng cho mấy bạn đang sử dụng bo mạch chủ 300 series "hàng thiệt" (B360, B365, H310, H370, Z390) mà đang vật vã với việc cài đặt iGPU để xuất hình ra màn hình.
 
-So to get started I'll assume you've already done basic framebuffer patches in your config from the [Coffee Lake portion of the guide](https://dortania.github.io/OpenCore-Install-Guide/config.plist/coffee-lake.html), it should look something like this:
+Để bắt đầu, mình đoán là các bạn đã làm xong mấy cái vá framebuffer cơ bản trong config theo [Phần Coffee Lake của hướng dẫn](https://dortania.github.io/OpenCore-Install-Guide/config.plist/coffee-lake.html) rồi nhé, trông nó sẽ na ná như thế này:
 
 ![](../images/extras/gpu-patches-md/prereq.png)
 
-* **Note**: With macOS 10.15.5, there seems to be a lot of issues with black screen using `07009B3E`, if you get similar issues try swapping to `00009B3E`
+* **Lưu ý**: Với macOS 10.15.5, có vẻ như dân tình gặp khá nhiều lỗi màn hình đen khi xài `07009B3E`, nếu bạn cũng dính chấu thì thử đổi sang `00009B3E` xem sao.
 
-Now that we're prepped, we can start looking into busID patching. Checking the dumps at the official [WhateverGreen repository](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md) shows us this for the `3E9B0007` ID(Desktop UHD 630):
+Giờ thì súng đạn đã sẵn sàng, chúng ta bắt đầu soi vào việc vá busID. Kiểm tra các bản dump (kết xuất dữ liệu) tại [kho lưu trữ chính thức của WhateverGreen](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md) cho ta thấy thông tin của ID `3E9B0007` (Máy bàn sử dụng UHD 630):
 
 ```
 ID: 3E9B0007, STOLEN: 57 MB, FBMEM: 0 bytes, VRAM: 1536 MB, Flags: 0x00801302
@@ -36,7 +36,7 @@ Mobile: 0, PipeCount: 3, PortCount: 3, FBMemoryCount: 3
 03060800 00040000 C7030000
 ```
 
-Looking at all this can be quite overwhelming, but we'll break it down to be a bit simpler. For use we care about this:
+Nhìn cái đống ở trên chắc muốn trầm cảm luôn, nhưng tụi mình sẽ xé nhỏ nó ra cho dễ nuốt. Cái chúng ta quan tâm là chỗ này nè:
 
 ```
 [1] busId: 0x05, pipe: 9, type: 0x00000400, flags: 0x000003C7 - DP
@@ -47,88 +47,88 @@ Looking at all this can be quite overwhelming, but we'll break it down to be a b
 03060800 00040000 C7030000
 ```
 
-These are your iGPUs ports by default, lets go through port 1 and see what each section is used for:
+Mấy cái này là cổng kết nối iGPU mặc định của bạn đó, giờ đi vào cái cổng số 1 (port 1) và xem từng phần nó dùng để làm gì nha:
 
-The first port:
+Cổng đầu tiên:
 
 ```
 01050900 00040000 C7030000
 ```
 
-Port: 01
+Cổng (port) số: 01
 
 * **01**050900 00040000 C7030000
 
-busId: 0x05
+Mã ID bus kết nối (busId): 0x05
 
 * 01**05**0900 00040000 C7030000
 
-Pipe Number 9 (little endian):
+Số thứ tự của đường dẫn dữ liệu (pipe number): 9 (dữ liệu dạng little endian):
 
 * 0105**0900** 00040000 C7030000
 
-Connector type: DisplayPort
+Chuẩn kết nối: DisplayPort
 
 * 01050900 **00040000** C7030000
 
-Flags - We leave it as default:
+Cờ hiệu (Flags) - Cái này để mặc định:
 
 * 01050900 00040000 **C7030000**
 
-Things to note:
+Một số thứ cần ghi nhớ:
 
-* You cannot use the same busId twice, having 2 in use will create conflicts
-* Pipe number and flags don't need to changed
+* Bạn không được sử dụng cùng một busId hai lần, có 2 cái giống nhau của 2 cổng là nó đánh nhau tơi bời (xung đột) đó.
+* Số thứ tự của đường dẫn dữ liệu (Pipe number) và cờ hiệu (flags) không cần đổi.
 
-List of connector types:
+Danh sách các loại chuẩn kết nối:
 
 * `00 04 00 00` - DisplayPort
 * `00 08 00 00` - HDMI
-* `04 00 00 00` - Digital DVI
-* `02 00 00 00` - LVDS (for laptops)
-* `01 00 00 00` - Dummy port
+* `04 00 00 00` - DVI (tín hiệu kỹ thuật số)
+* `02 00 00 00` - LVDS (dành cho laptop)
+* `01 00 00 00` - Cổng giả tượng trưng cho có
 
-### Mapping video ports
+### Ánh xạ cổng xuất hình
 
-1. Plug display into HDMI port
+1. Cắm màn hình vào cổng HDMI.
 
-2. Set Port 1 to the HDMI connector type:
+2. Chỉnh Port 1 thành loại kết nối HDMI:
 
    * 01xx0900 **00080000** C7030000
 
-3. Disable ports 2 and 3 with busid=00:
+3. Vô hiệu hóa cổng 2 và 3 bằng cách đặt busid=00:
 
    * 02**00**0A00 00040000 C7030000
    * 03**00**0800 00040000 C7030000
 
-4. Walk through busids for Port 1 if the previous didn't work(yup you gotta do a shit ton of reboots). The maximum busid on most platforms is 0x06
+4. Bắt đầu thử lần lượt các busid cho Port 1 nếu cái trước đó không chạy (chuẩn rồi, bạn phải khởi động lại máy mòn mỏi luôn đấy - a shit ton of reboots). Busid tối đa trên hầu hết các nền tảng là 0x06.
 
    * 01**01**0900 00080000 C7030000
    * 01**02**0900 00080000 C7030000
    * 01**03**0900 00080000 C7030000
-   * etc
+   * vân...vân
 
-If you still get no output, set port 1's busid to 00 and start going through busids for port 2 and so on
+Nếu bạn đã thử hết mà vẫn tối thui, thì set busid của port 1 về 00 và bắt đầu chuyển sang thử busid cho port 2, cứ thế mà làm:
 
 * 01000900 00040000 C7030000
 * 02xx0A00 00080000 C7030000
 * 03000800 00040000 C7030000
 
-### Adding to your config.plist
+### Thêm vào config.plist
 
-So adding these patches are simple though a bunch of entries are required:
+Thêm mấy bản vá này cũng đơn giản thôi mặc dù cần khai báo hơi nhiều dòng:
 
 * framebuffer-con0-enable = `01000000`
 * framebuffer-con1-enable = `01000000`
 * framebuffer-con2-enable = `01000000`
-* framebuffer-con0-alldata = port 1
-* framebuffer-con1-alldata = port 2
-* framebuffer-con2-alldata = port 3
+* framebuffer-con0-alldata = Cổng số 1
+* framebuffer-con1-alldata = Cổng số 2
+* framebuffer-con2-alldata = Cổng số 3
 
-So when adding the patches, port 1 will actually become con0 as the ports start at 0. These are also all data types when entering your values.
+Lưu ý là khi thêm bản vá, port 1 (cổng 1) sẽ tương ứng với con0 vì máy tính đếm từ số 0. Mấy giá trị này đều là kiểu dữ liệu (data types) khi nhập vào nhé.
 
-A finished config should look something like this:
+Cấu hình hoàn chỉnh trông sẽ na ná thế này:
 
 ![](../images/extras/gpu-patches-md/path-done.png)
 
-Source for iGPU BusID patching: [CorpNewt's Brain](https://github.com/corpnewt)
+Nguồn gốc bài viết này được lấy từ hướng dẫn vá BusID cho iGPU [CorpNewt's Brain](https://github.com/corpnewt)

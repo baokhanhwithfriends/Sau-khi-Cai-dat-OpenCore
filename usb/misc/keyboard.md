@@ -1,56 +1,56 @@
-# Keyboard Wake Issues
+# Sửa lỗi không đánh thức máy được bằng bàn phím
 
-So an odd bug with Intel's 100 series chipsets and newer is that sometimes macOS requires a second keyboard press or some other wake event to power up the monitor as well, with some requiring a keypress+power button to wake. Well to fix this, we need to either:
+Một con bọ (bug) khá dị với mấy cái bo mạch dòng chipset Intel 100 series trở lên là đôi khi macOS bắt bạn phải nhấn phím lần thứ hai hoặc cần một sự kiện đánh thức khác thì mới chịu bật màn hình lên, thậm chí một số máy "khó ở" còn bắt phải nhấn phím + nút nguồn mới chịu dậy. Để trị bệnh này, chúng ta có vài cách:
 
-* [Set `acpi-wake-type` to the USB Controller(Recommended)](#method-1-add-wake-type-property-recommended)
-* [Create a fake ACPI Device](#method-2-create-a-fake-acpi-device)
-* [Disable darkwake(not ideal, as background tasks will also turn on the display)](#method-3-configuring-darkwake)
+* [Thiết lập `acpi-wake-type` cho bộ điều khiển USB (Khuyên dùng)](#method-1-add-wake-type-property-recommended)
+* [Tạo thêm một thiết bị ACPI](#method-2-create-a-fake-acpi-device)
+* [(Tắt darkwake - không lý tưởng lắm, vì các tác vụ nền cũng sẽ làm sáng màn hình)](#method-3-configuring-darkwake)
 
-You can find a great write up on the whole situation and the fixes here: [USB Fix](https://osy.gitbook.io/hac-mini-guide/details/usb-fix).
+Bạn có thể tìm thấy một bài viết cực hay về toàn bộ tình huống này và các cách sửa lỗi tại đây: [Sửa lỗi USB](https://osy.gitbook.io/hac-mini-guide/details/usb-fix).
 
-It's an excellent read and highly recommend to truly understand *what* is exactly happening, and it's not like you've done enough reading already with this guide ;p
+Bài viết đó đọc cuốn lắm, mình cực kỳ khuyên bạn nên đọc để thực sự hiểu *cái quái gì* đang diễn ra, chứ không phải là bạn đọc cái hướng dẫn này với trạng thái chưa đủ mệt hay sao á ;p
 
-## Method 1 - Add Wake Type Property (Recommended)
+## Cách 1 - Bổ sung thuộc tính Wake Type - Khuyên dùng
 
-So the ideal method is to declare the XHCI Controller(This is our USB Controller) to be an ACPI wake device, as we don't have compatible ECs for macOS to handle proper wake calls.
+Cách lý tưởng nhất là tuyên bố với hệ thống rằng XHCI Controller (chính là Bộ điều khiển USB của chúng ta) là một thiết bị đánh thức ACPI, vì chúng ta không có EC (Embedded Controller) tương thích để macOS xử lý các lệnh gọi đánh thức một cách chuẩn chỉ.
 
-To start,  we'll need to grab the PciRoot of our USB Controller(we'll use [gfxutil](https://github.com/acidanthera/gfxutil/releases), Generally the names would be XHC, XHC1 and XHCI)
+Để bắt đầu, chúng ta cần tóm lấy cái PciRoot của Bộ điều khiển USB (chúng ta sẽ dùng [gfxutil](https://github.com/acidanthera/gfxutil/releases), thường thì tên sẽ là XHC, XHC1 và XHCI)
 
 ![](../../images/post-install/usb-md/xhci-path.png)
 
-Now with the PciRoot, open your config.plist and add a new entry under DeviceProperties -> Add, and add your PciRoot. Then create a child with the following attributes:
+Giờ có PciRoot trong tay rồi, mở config.plist lên và thêm một mục mới dưới DeviceProperties -> Add, rồi thêm cái PciRoot của bạn vào. Sau đó tạo một mục con với các thuộc tính sau:
 
 `acpi-wake-type | Data | <01>`
 
 ![](../../images/post-install/usb-md/deviceproperties.png)
 
-## Method 2 - Create a fake ACPI Device
+## Cách 2 - Bổ sung thiết bị ACPI giả
 
-This method creates a fake ACPI Device that will be associated with the GPE, then add the property of `acpi-wake-type` with USBWakeFixup.kext.
+Phương pháp này tạo ra một thiết bị ACPI giả (fake) sẽ được liên kết với GPE, sau đó bổ sung thuộc tính `acpi-wake-type` bằng USBWakeFixup.kext.
 
-It's actually quite easy to setup, you'll need the following:
+Thực ra thiết lập cũng dễ thôi, bạn cần mấy món sau:
 
 * [USBWakeFixup.kext](https://github.com/osy86/USBWakeFixup/releases)
-  * Both under EFI/OC/Kexts and your config.plist
+  * Bỏ vào cả EFI/OC/Kexts và khai báo trong config.plist của bạn.
 * [SSDT-USBW.dsl](https://github.com/osy86/USBWakeFixup/blob/master/SSDT-USBW.dsl)
 
-To create the SSDT-USBW for your specific system, you're gonna need the ACPI path of your USB controller. If we look back above to the gfxutil example, we can see it also lists our ACPI path:
+Để tạo SSDT-USBW cho hệ thống cụ thể của bạn, bạn sẽ cần đường dẫn ACPI của bộ điều khiển USB. Nếu nhìn lại ví dụ gfxutil ở trên, chúng ta thấy nó cũng liệt kê đường dẫn ACPI:
 
 * `/PC00@0/XHCI@14` -> `\_SB.PC00.XHCI`
 
-Now we can shove that into our SSDT:
+Giờ chúng ta nhét cái đó vào SSDT của mình:
 
 ![](../../images/post-install/usb-md/usbw.png)
 
-Now with that done, you can compile and add it to your EFI and config.plist. See [Getting Started With ACPI](https://dortania.github.io/Getting-Started-With-ACPI/Manual/compile.html) for more info on compiling SSDTs
+Xong xuôi thì biên dịch (compile) và thêm nó vào EFI và config.plist. Đọc [Khởi đầu với ACPI](https://dortania.github.io/Getting-Started-With-ACPI/Manual/compile.html) để biết thêm thông tin về việc biên dịch SSDT.
 
-## Method 3 - Configuring darkwake
+## Cách 3 - Cấu hình darkwake
 
-Before we get deep into configuring darkwake, it would be best to explain what darkwake is. A great in-depth thread by holyfield can be found here: [DarkWake on macOS Catalina](https://www.insanelymac.com/forum/topic/342002-darkwake-on-macos-catalina-boot-args-darkwake8-darkwake10-are-obsolete/)
+Trước khi đi sâu vào cấu hình darkwake, tốt nhất là giải thích xem darkwake là cái gì đã. Có một bài viết chuyên sâu cực hay của holyfield tại đây: [DarkWake on macOS Catalina](https://www.insanelymac.com/forum/topic/342002-darkwake-on-macos-catalina-boot-args-darkwake8-darkwake10-are-obsolete/)
 
-In its simplest form, you can think of darkwake as "partial wake", where only certain parts of your hardware are lit up for maintenance tasks while others remain asleep(ie. Display). Reason we may care about this is that darkwake can add extra steps to the wake process like keyboard press, but outright disabling it can make our hack wake randomly. So ideally we'd go through the below table to find an ideal value.
+Hiểu đơn giản nhất, bạn có thể coi darkwake là "tỉnh dậy một nửa" (partial wake), nơi chỉ một số phần cứng nhất định được bật lên để làm các tác vụ bảo trì trong khi các phần khác vẫn ngủ (ví dụ: Màn hình). Lý do chúng ta quan tâm đến cái này là vì darkwake có thể thêm các bước phụ vào quy trình đánh thức như yêu cầu nhấn phím, nhưng nếu tắt hẳn nó đi thì máy Hackintosh của chúng ta có thể tự bật dậy ngẫu nhiên. Vì vậy lý tưởng nhất là xem qua bảng bên dưới để tìm giá trị phù hợp.
 
-Now lets take a look at [IOPMrootDomain's source code](https://opensource.apple.com/source/xnu/xnu-6153.81.5/iokit/Kernel/IOPMrootDomain.cpp.auto.html):
+Giờ hãy nhìn vào [mã nguồn IOPMrootDomain](https://opensource.apple.com/source/xnu/xnu-6153.81.5/iokit/Kernel/IOPMrootDomain.cpp.auto.html):
 
 ```cpp
 // gDarkWakeFlags
@@ -65,29 +65,29 @@ enum {
 };
 ```
 
-Now lets go through each bit:
+Giờ đi qua từng bit một:
 
-| Bit | Name | Comment |
+| Bit | Name (Tên) | Comment (Ghi chú) |
 | :--- | :--- | :--- |
-| 0 | N/A |  Supposedly disables darkwake |
-| 1 | HID Tickle Early | Helps with wake from lid, may require pwr-button press to wake in addition |
-| 2 | HID Tickle Late | Helps single keypress wake but disables auto-sleep |
-| 3 | HID Tickle None | Default darkwake value if none is set|
-| 3 | HID Tickle Mask | To be paired with other |
-| 256 | Alarm Is Dark | To be explored |
-| 512 | Graphics Power State 1 | Enables wranglerTickled to wake fully from hibernation and RTC |
-| 1024 | Audio Not Suppressed | Supposedly helps with audio disappearing after wake |
+| 0 | N/A | Được cho là vô hiệu hóa darkwake |
+| 1 | HID Tickle Early | Giúp đánh thức khi mở nắp laptop, có thể cần nhấn thêm nút nguồn mới dậy |
+| 2 | HID Tickle Late | Giúp đánh thức bằng một lần nhấn phím nhưng vô hiệu hóa tính năng tự động ngủ |
+| 3 | HID Tickle None | Giá trị darkwake mặc định nếu không thiết lập gì |
+| 3 | HID Tickle Mask | Để ghép cặp với cái khác |
+| 256 | Alarm Is Dark | Đang được nghiên cứu |
+| 512 | Graphics Power State 1 | Cho phép wranglerTickled đánh thức hoàn toàn từ chế độ ngủ đông và RTC |
+| 1024 | Audio Not Suppressed | Được cho là giúp sửa lỗi mất tiếng sau khi máy thức dậy |
 
-* Note that HID = Human-interface devices(Keyboards, mice, pointing devices, etc)
+* Lưu ý là HID = Human-interface devices (Thiết bị giao diện người dùng: Bàn phím, chuột, trackpad, v.v).
 
-To apply the above table to your system, it's as simple as grabbing calculator, adding up your desired darkwake values and then applying the final value to your boot-args. However we recommend trying 1 at a time rather than merging all at once, unless you know what you're doing(though you likely wouldn't be reading this guide).
+Để áp dụng bảng trên vào hệ thống của bạn, đơn giản là lấy máy tính ra, cộng các giá trị darkwake bạn muốn và áp dụng giá trị tổng cuối cùng vào boot-args. Tuy nhiên tụi tui khuyên bạn nên thử từng cái một thay vì gộp hết một lúc, trừ khi bạn biết rõ mình đang làm gì (mà nếu biết rõ thì chắc bạn chả đọc cái hướng dẫn này đâu nhỉ).
 
-For this example, lets try and combine `kDarkWakeFlagHIDTickleLate` and `kDarkWakeFlagGraphicsPowerState1`:
+Ví dụ, hãy thử kết hợp `kDarkWakeFlagHIDTickleLate` và `kDarkWakeFlagGraphicsPowerState1`:
 
 * `2`= kDarkWakeFlagHIDTickleLate
 * `512`= kDarkWakeFlagAudioNotSuppressed
 
-So our final value would be `darkwake=514`, which we can next place into boot-args:
+Vậy giá trị cuối cùng là `darkwake=514`, chúng ta sẽ nhét vào boot-args:
 
 ```
 NVRAM
@@ -96,9 +96,9 @@ NVRAM
     |---boot-args | Sting | darkwake=514
 ```
 
-The below is more for clarification for users who are already using darkwake or are looking into it, specifically clarifying what values no longer work:
+Phần dưới này để làm rõ cho những người dùng đang dùng darkwake hoặc đang tìm hiểu, cụ thể là những giá trị nào không còn tác dụng nữa:
 
-* `darkwake=8`: This hasn't been in the kernel since [Mavericks](https://opensource.apple.com/source/xnu/xnu-2422.115.4/iokit/Kernel/IOPMrootDomain.cpp.auto.html)
-  * Correct boot-arg would be `darkwake=0`
-* `darkwake=10`: This hasn't been in the kernel since [Mavericks](https://opensource.apple.com/source/xnu/xnu-2422.115.4/iokit/Kernel/IOPMrootDomain.cpp.auto.html)
-  * Correct boot-arg would be `darkwake=2`
+* `darkwake=8`: Cái này đã bay màu khỏi kernel từ thời [Mavericks](https://opensource.apple.com/source/xnu/xnu-2422.115.4/iokit/Kernel/IOPMrootDomain.cpp.auto.html)
+  * Boot-arg đúng nên là `darkwake=0`
+* `darkwake=10`: Cái này cũng bay màu từ thời [Mavericks](https://opensource.apple.com/source/xnu/xnu-2422.115.4/iokit/Kernel/IOPMrootDomain.cpp.auto.html)
+  * Boot-arg đúng nên là `darkwake=2`

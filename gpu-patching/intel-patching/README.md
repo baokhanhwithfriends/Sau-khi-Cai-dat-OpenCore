@@ -1,81 +1,86 @@
-# Intel iGPU Patching
+# Sửa lỗi iGPU Intel nâng cao
 
-This guide will be a more in-depth look into patching macOS to support more hardware variations of Intel's iGPUs including proper display out, fixing color tint issues, HiDPI issues and etc. Note this guide is **not** a beginners tutorial, we recommend you follow the recommend iGPU properties listed in the config.plist section of the guide to start off.
+Hướng dẫn này sẽ đi sâu vào việc vá lỗi macOS để nó chạy được với nhiều biến thể phần cứng iGPU của Intel hơn, bao gồm việc xuất hình chuẩn, sửa lỗi sai màu, lỗi HiDPI và ti tỉ thứ khác. Lưu ý là cái này **không phải** hướng dẫn cho người mới bắt đầu (beginners tutorial), tụi mình khuyên bạn nên cài đặt thuộc tính iGPU được đề xuất trong phần config.plist của hướng dẫn cài đặt để bắt đầu đã. Nếu đã thử mà không lên (thường gặp với máy bàn) thì bạn quay lại đây nhé.
 
-This guide supports:
+Hướng dẫn này dành cho:
 
-* Sandy Bridge through Ice Lake iGPUs
+* iGPU từ đời Sandy Bridge đến tận Ice Lake.
 
-## Terminology
+## Thuật ngữ
 
-| Term | Description |
+| Thuật ngữ | Mô tả |
 | :--- | :--- |
-| Framebuffer | Refers to the kext used in macOS to drive a GPU |
-| Framebuffer Profile | Profile in a framebuffer which determines how the iGPU will act |
-| WhateverGreen | Kext used to patch GPU drivers to better support PC hardware |
-| AAPL,ig-platform-id | Property used by macOS to determine the framebuffer profile with Ivy Bridge and newer |
-| AAPL,snb-platform-id | Property used by macOS to determine the framebuffer profile with Sandy Bridge |
-| device-id | Used by IOKit to match hardware to kexts |
+| Framebuffer | Ám chỉ cái kext được chọn trong macOS để điều khiển con card màn hình. |
+| Framebuffer Profile | Hồ sơ trong một framebuffer quyết định cách iGPU sẽ hoạt động. |
+| WhateverGreen | Kext này sử dụng để vá driver GPU mặc định của macOS giúp hỗ trợ phần cứng PC tốt hơn (tức là làm cho nó chạy được trên phần cứng PC). |
+| Stolen Memory (viết tắt là STOLENMEM) | Còn gọi là bộ nhớ bị chiếm dụng, đây là phần RAM bị BIOS "cố định" ngay từ lúc khởi động máy chỉ để phục vụ cho iGPU. Hệ điều hành macOS cực kỳ khắt khe với phần này. Sẽ nói rõ hơn ở phần vá bộ nhớ VRAM. |
+| Framebuffer Memory (viết tắt là FBMEM) | Còn gọi là bộ nhớ khung hình, đây là phần RAM để chứa dữ liệu hình ảnh đang hiển thị trên màn hình của bạn. Độ phân giải càng cao (4K, 5K) thì phần này tốn càng nhiều. |
+| Cursor Memory (viết tắt là CURSORMEM) | Còn gọi là bộ nhớ con trỏ chuột. Với những đời máy Mac cũ còn cơ chế quản lý RAM cứng nhắc chưa được thông minh, Apple quy định thêm đây là phần RAM để chứa dữ liệu con trỏ chuột giúp di chuyển mượt mà không làm lag cái màn hình. Thay vì phải vẽ lại toàn bộ khung hình mỗi khi bạn di chuột, nó chỉ cần cập nhật tọa độ trên lớp (layer) của con trỏ thôi. Với các đời máy mới hơn |
+| Dynamic Memory | Đây là phần RAM tối đa sẽ được macOS linh động "mượn thêm" từ RAM khi bạn sử dụng các tác vụ cần nhiều bộ nhớ VRAM như chơi game hoặc render video. Con số 1536MB bạn thấy trong About This Mac chính là cái Dynamic Memory. Đây cũng có nghĩa là tổng dung lượng bộ nhớ VRAM. |
+| AAPL,ig-platform-id | Thuộc tính macOS xài để xác định hồ sơ framebuffer được chọn với thế hệ Ivy Bridge và mới hơn. |
+| AAPL,snb-platform-id | Thuộc tính macOS xài để xác định hồ sơ framebuffer được chọn với thế hệ Sandy Bridge. |
+| device-id | Được IOKit sử dụng để khớp phần cứng với các kext. |
 
-## Getting started
 
-Before we jump too deep into this rabbit hole, we should first explain what we're doing and why we need to do this.
+## Bắt đầu thôi
 
-**Basic topics**:
+Trước khi chúng ta nhảy quá sâu vào cái hố thỏ này, chúng ta nên giải thích xem mình đang làm cái gì và tại sao phải làm thế đã.
 
-* [AAPL,ig-platform-id explainer](#aapl-ig-platform-id-explainer)
-* [device-id explainer](#device-id-explainer)
+**Các chủ đề cơ bản**:
 
-### AAPL,ig-platform-id explainer
+* [Giải thích AAPL,ig-platform-id là gì](#aapl-ig-platform-id-explainer)
+* [Giải thích device-id là gì](#device-id-explainer)
 
-By default in Macs with iGPUs, there are a few configurations:
+### Giải thích AAPL,ig-platform-id là gì
 
-* iGPU is the sole display output
-  * Commonly seen on Mac Minis, MacBook Airs, 13" MacBook Pros and iMacs without a dGPU
-* iGPU is only used for internal displays, and dGPUs are handling external displays
-  * Commonly seen with 15" MacBook Pros
-* iGPU is solely used for internal compute, and dGPU handles all display outputs
-  * Commonly seen with iMacs that include dGPUs
+Mặc định trên mấy cái máy Mac chỉ có iGPU, có một vài cấu hình như sau:
 
-The reason why this is important is due to the amount of iGPU configurations Apple supports in the iGPU kexts, specifically known as framebuffer personalities. These personalities determine many things including number of displays, types of displays allowed, location of these displays, minimum VRAM required, etc, and so we need to either hope one of these profiles matches our hardware or try to patch it.
+* iGPU là đầu ra hiển thị duy nhất.
+  * Thường thấy trên Mac Mini, MacBook Air, MacBook Pro 13" và iMac không có dGPU (Card rời).
+* iGPU chỉ dùng cho màn hình tích hợp (màn hình laptop) và dGPU xử lý các màn hình ngoài.
+  * Thường thấy trên MacBook Pro 15".
+* iGPU chỉ dùng để tính toán nội bộ (internal compute) và dGPU xử lý tất cả đầu ra hiển thị.
+  * Thường thấy trên các dòng iMac có kèm dGPU.
 
-To specify a framebuffer personality in macOS, we use the DeviceProperties section in OpenCore to add an entry called `AAPL,ig-platform-id`
+Lý do điều này quan trọng là vì số lượng cấu hình iGPU mà Apple hỗ trợ trong các kext iGPU, cụ thể được gọi là "framebuffer personalities" (nhân cách framebuffer). Các nhân cách này quyết định nhiều thứ bao gồm số lượng màn hình, quy định loại màn hình được phép sử dụng, vị trí các cổng kết nối, VRAM tối thiểu yêu cầu, v.v., và vì thế chúng ta hoặc là hy vọng một trong các hồ sơ (profile) này khớp với phần cứng của mình, hoặc là phải cố mà vá nó cho phù hợp với máy của mình.
 
-* Note: on Sandy Bridge, we use `AAPL,snb-platform-id` instead
+Để chỉ định một nhân cách framebuffer trong macOS, chúng ta dùng phần DeviceProperties trong OpenCore để thêm một mục gọi là `AAPL,ig-platform-id`
 
-The format of this entry is hexadecimal, and is byte swapped from the actual value. A full list of these values can be found in WhateverGreen's manual: [FAQ.IntelHD.en.md](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md)
+* Lưu ý: trên Sandy Bridge, chúng ta xài `AAPL,snb-platform-id` thay thế
 
-For this example, lets try to find a framebuffer compatible for a desktop HD 4600 iGPU. We'll first want to scroll down the manual until we hit the [Intel HD Graphics 4200-5200 (Haswell processors)](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md#Intel-hd-graphics-4200-5200-haswell-processors) entry. Here we're given a list of all supported framebuffers in macOS, including the hardware type(ie. Mobile vs desktop), VRAM requirements, etc. If you scroll to the bottom of this list, you're also given some recommended options:
+Định dạng của mục này là hệ thập lục phân (hexadecimal) và các byte bị đảo ngược (byte swapped) so với giá trị thực tế. Danh sách đầy đủ các giá trị này có thể tìm thấy trong hướng dẫn sử dụng của WhateverGreen: [FAQ.IntelHD.en.md](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md)
+
+Ví dụ, hãy thử tìm một framebuffer tương thích cho con iGPU HD 4600 trên máy bàn (desktop). Đầu tiên chúng ta cuộn xuống trong hướng dẫn sử dụng cho đến khi gặp mục [Intel HD Graphics 4200-5200 (vi xử lý Haswell)](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md#Intel-hd-graphics-4200-5200-haswell-processors). Ở đây chúng ta có danh sách tất cả các framebuffer được hỗ trợ trong macOS, bao gồm loại phần cứng (Laptop hay Desktop), yêu cầu VRAM, v.v. Nếu cuộn xuống cuối danh sách này, bạn cũng sẽ thấy một số tùy chọn được đề xuất:
 
 ```
-Desktop :
- 0x0D220003 (default)
+Máy tính bàn :
+ 0x0D220003 (mặc định)
 Laptop :
- 0x0A160000 (default)
- 0x0A260005 (recommended)
- 0x0A260006 (recommended)
-Empty Framebuffer :
- 0x04120004 (default)
+ 0x0A160000 (mặc định)
+ 0x0A260005 (khuyến khích sử dụng)
+ 0x0A260006 (khuyến khích sử dụng)
+Framebuffer trống :
+ 0x04120004 (mặc định)
 ```
 
-The first 2 entries are pretty obvious, however the last one(Empty Framebuffer) refers to systems where they have a dGPU already setup but still have an iGPU enabled in the background to handle tasks such as hardware accelerated decoding in tasks it excels at.
+Hai mục đầu tiên khá dễ hiểu, tuy nhiên cái cuối cùng (Empty Framebuffer - Framebuffer trống) ám chỉ mấy cái máy đã có dGPU (Card rời) cài đặt sẵn nhưng vẫn để mở iGPU chạy ngầm để xử lý các tác vụ như giải mã tăng tốc phần cứng, việc mà nó rất giỏi.
 
-Now since we're using the desktop HD 4600, we'll grab the corresponding framebuffer profile: `0x0D220003`
+Vì chúng ta đang dùng HD 4600 máy bàn, chúng ta sẽ lấy cái hồ sơ framebuffer tương ứng: `0x0D220003`
 
-Now by itself, we cannot use this in our config.plist. The reasoning being is that it's in Big Endian while macOS's IOService tree expects it to be in Little Endian. To convert it however is quite simple:
+Nhưng khoan, chúng ta chưa thể sử dụng ngay cái này trong config.plist được. Lý do là nó đang ở dạng Big Endian trong khi cây IOService của macOS lại mong đợi nó ở dạng Little Endian. Chuyển đổi cái này cũng đơn giản thôi:
 
 ```md
-# To start, remove the 0x and then space them out in pairs
+# Để bắt đầu, bỏ 0x đi và tách tụi nó thành từng cặp
 0x0D220003 -> 0D 22 00 03
 
-# Next, reverse the order but keep the pairs together
+# Tiếp theo, đảo ngược thứ tự nhưng giữ nguyên vị trí các cặp số
 0D 22 00 03 -> 03 00 22 0D
 
-# And now you have your final framebuffer profile
+# Và giờ bạn có hồ sơ framebuffer cuối cùng
 0300220D = AAPL,ig-platform-id
 ```
 
-From here, lets open up our config.plist and head to DeviceProperties -> Add. Now we'll want to add a new Entry called `PciRoot(0x0)/Pci(0x2,0x0)`. This is the location of Intel's iGPUs relative to the IOService path, and has been consistent as far back as Yonah series CPUs(2007+):
+Từ đây, mở config.plist của bạn lên và vào mục DeviceProperties -> Add. Giờ chúng ta sẽ thêm một mục mới gọi là `PciRoot(0x0)/Pci(0x2,0x0)`. Đây là vị trí của iGPU Intel so với đường dẫn IOService và nó nhất quán từ thời CPU dòng Yonah (2007+) tới giờ:
 
 | Key | Type | Value |
 | :--- | :--- | :--- |
@@ -85,20 +90,20 @@ From here, lets open up our config.plist and head to DeviceProperties -> Add. No
 
 ### device-id explainer
 
-`device-id` is what macOS, or more specifically IOKit, uses to determine which devices are allowed to connect to which drivers. Why this is important for us is that Apple's iGPU drivers have a limited amount of IDs even though the kext itself can support much more.
+`device-id` là thứ mà macOS, hay cụ thể hơn là IOKit, sử dụng để xác định thiết bị nào được phép kết nối với driver nào. Cái này quan trọng với chúng ta vì driver iGPU của Apple có số lượng ID giới hạn mặc dù bản thân kext có thể hỗ trợ nhiều hơn thế do sự tương đồng về kiến trúc giữa iGPU của máy Mac và PC thông thường.
 
-To determine whether you need a new `device-id` injected, you'll want to compare [WhateverGreen's list of supported IDs](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md) to what you have.
+Để xác định xem bạn có cần nạp (inject) một `device-id` mới hay không, bạn cần so sánh [Danh sách ID được hỗ trợ của WhateverGreen](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md) với cái bạn đang có.
 
-For this example, lets take a look at the i3-4150 with an HD 4400 iGPU. Using [Intel's ARK page](https://ark.Intel.com/content/www/us/en/ark/products/77486/Intel-core-i3-4150-processor-3m-cache-3-50-ghz.html), we can see the following:
+Ví dụ, hãy xem con i3-4150 đi kèm với iGPU HD 4400. Vô [trang ARK của Intel](https://ark.Intel.com/content/www/us/en/ark/products/77486/Intel-core-i3-4150-processor-3m-cache-3-50-ghz.html), chúng ta thấy thông tin sau:
 
 ```
 Device ID = 0x41E
 ```
 
-Now that we have our actual Device ID, lets compare it to [WhateverGreen's list](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md):
+Giờ có Device ID thực tế rồi, so sánh nó với [danh sách hỗ trợ của WhateverGreen](https://github.com/acidanthera/WhateverGreen/blob/master/Manual/FAQ.IntelHD.en.md):
 
 ```
-Native supported DevIDs:
+Danh sách DevIDs được hỗ trợ nguyên bản:
 
  0x0d26
  0x0a26
@@ -107,26 +112,26 @@ Native supported DevIDs:
  0x0412
 ```
 
-Unfortunately the ID is not present in macOS, so we'll need to find a similar iGPU to ours and use their Device ID. The HD 4600 found in the [i3-4330](https://ark.Intel.com/content/www/us/en/ark/products/77769/Intel-core-i3-4330-processor-4m-cache-3-50-ghz.html) is a very close match, so we'll use its Device ID:
+Đen đủi thay cái ID này không có trong driver của macOS, nên chúng ta cần tìm một iGPU tương tự với cái của mình và sử dụng Device ID của nó thay thế (thủ thuật này còn kêu là Fake ID). Con HD 4600 trên [i3-4330](https://ark.Intel.com/content/www/us/en/ark/products/77769/Intel-core-i3-4330-processor-4m-cache-3-50-ghz.html) là một ứng cử viên rất gần, nên chúng ta sẽ dùng Device ID của nó:
 
 ```
 Device ID = 0x412
 ```
 
-However, by default this cannot be injected. We'll need to first pad it to 8 bits and hex swap:
+Tuy nhiên, mặc định không thể nạp cái này ngay được. Chúng ta cần đệm (pad) nó đủ 8 bit và đảo ngược hex (hex swap):
 
 ```md
-# First, remove 0x and pad it to 8 bits by using 0's in front of it
+# Để bắt đầu, bỏ 0x và đệm nó đủ 8 bit bằng cách thêm số 0 vào trước
 0x412 -> 00 00 04 12
 
-# Next reverse it, but keep the pairs in tact
+# Tiếp theo, đảo ngược thứ tự nhưng giữ nguyên vị trí các cặp số
 00 00 04 12 -> 12 04 00 00
 
-# And voila, you have your device-id
+# Và voila, bạn đã có device-id mình cần
 12040000 = device-id
 ```
 
-Now that we have our device-id, we'll do the same thing as before with ig-platform-id. Open your config.plist and add this new entry under `PciRoot(0x0)/Pci(0x2,0x0)`:
+Giờ có device-id rồi, làm tương tự như với ig-platform-id lúc nãy. Mở config.plist và thêm mục mới này dưới `PciRoot(0x0)/Pci(0x2,0x0)`:
 
 | Key | Type | Value |
 | :--- | :--- | :--- |
@@ -134,21 +139,21 @@ Now that we have our device-id, we'll do the same thing as before with ig-platfo
 
 ![](../../images/gpu-patching/device-id.png)
 
-## Learning to patch with WhateverGreen
+## Học cách vá lỗi driver với WhateverGreen
 
-Now that we've gone over the basics of setting up an iGPU, let's get into some deeper topics. We'll need to go over some  prerequisites first:
+Giờ đã xong phần cơ bản thiết lập iGPU, hãy đi vào mấy chủ đề sâu xa hơn. Cần chuẩn bị vài thứ trước đã:
 
-* Lilu and WhateverGreen are present under EFI/OC/Kexts and in your config.plist
-  * To verify if they loaded correctly in macOS, run the below command(if nothing is outputted, the kexts are not loading)
+* Lilu và WhateverGreen phải có mặt trong EFI/OC/Kexts và trong config.plist của bạn.
+  * Để kiểm tra xem tụi nó đã được nạp đúng trong macOS chưa, chạy lệnh bên dưới (nếu không ra gì nghĩa là kext chưa nạp).
   * `kextstat | grep -E "Lilu|WhateverGreen"`
-* `DeviceProperties -> Add -> PciRoot(0x0)/Pci(0x2,0x0)` has been correctly setup
-  * Refer to your specific generation in the [config.plist section](https://dortania.github.io/OpenCore-Install-Guide/)
+* `DeviceProperties -> Add -> PciRoot(0x0)/Pci(0x2,0x0)` đã được thiết lập chính xác.
+  * Tham khảo thế hệ CPU cụ thể của bạn trong [phần config.plist](https://baokhanhwithfriends.github.io/Huong-dan-cai-dat-OpenCore/)
 
-Now head forth into your framebuffer patching journey!:
+Giờ hãy dấn thân vào hành trình vá lỗi framebuffer nào!:
 
-* [Patching the VRAM requirement of macOS](./vram.md)
-  * Relevant for systems with locked BIOS and cannot increase the VRAM
-* [Patching the display type](./connector.md)
-  * Relevant for systems where you may get distorted colors on certain monitors
-* [Patching the display connections](./busid.md)
-  * Relevant for systems where certain display outputs do not work
+* [Vá bộ nhớ VRAM được yêu cầu](./vram.md)
+  * Cần thiết cho mấy cái máy tính bị khóa BIOS và không thể tăng VRAM
+* [Vá chuẩn kết nối màn hình](./connector.md)
+  * Cần thiết cho mấy cái máy tính bị lỗi sai màu trên một số màn hình nhất định
+* [Vá lỗi không xuất được hình nâng cao](./busid.md)
+  * Cần thiết cho mấy cái máy tính mà một số cổng xuất hình không hoạt động

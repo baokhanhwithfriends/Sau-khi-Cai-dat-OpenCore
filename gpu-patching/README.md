@@ -1,15 +1,15 @@
-# GPU Patching in macOS
+# Vá lỗi card màn hình trên hệ điều hành macOS
 
-This section is dedicated to GPU patching, currently we support the following:
+Phần này dành riêng cho việc vá lỗi card màn hình nâng cao hơn, đối tượng phần cứng mà bài viết này nhắm tới gồm có:
 
-## Intel iGPU Patching
+## Vá lỗi card màn hình onboard Intel
 
-* [Modern iGPU patching](./intel-patching/README.md)
-  * Sandy and newer is supported
-* [Legacy iGPU patching](./legacy-Intel/README.md)
-  * GMA series is supported
+* [Vá lỗi cho card màn hình onboard Intel (đời mới)](./intel-patching/README.md)
+  * Thế hệ Sandy Bridge và các thế hệ mới hơn được hỗ trợ.
+* [Vá lỗi cho card màn hình onboard Intel (đời siêu... cũ)](./legacy-Intel/README.md)
+  * Thế hệ GMA được hỗ trợ.
 
-## Nvidia Patching
+## Vá lỗi card màn hình Nvidia 
 
-* [Legacy Nvidia Patching](./nvidia-patching/README.md)
-  * Tesla through Fermi series are supported
+* [Vá lỗi cho card màn hình onboard Nvidia (đời cũ)](./nvidia-patching/README.md)
+  * Thế hệ Tesla cho tới dòng sản phẩm Fermi được hỗ trợ.

@@ -1,20 +1,20 @@
-# Fixing USB Power
+# Sửa lỗi nguồn USB
 
-With Skylake and newer SMBIOS, Apple no longer provides USB power settings via IOUSBHostFamily, this means we need to adopt the same method real Macs do and supply macOS with a USBX device. This will set both the wake and sleep power values for all your USB ports, and can help fix many high power devices:
+Với các SMBIOS Skylake và đời mới hơn, Apple không còn cung cấp các thiết lập nguồn điện USB thông qua IOUSBHostFamily (Trình quản lý họ USB) nữa. Điều này có nghĩa là chúng ta phải "học tập" phương pháp mà máy Mac thật sử dụng và cung cấp cho macOS một thiết bị USBX. Cái này sẽ thiết lập các giá trị điện năng cho cả lúc thức và lúc ngủ cho tất cả các cổng USB của bạn, và có thể giúp "cứu" nhiều thiết bị ngốn điện cao như:
 
-* Mics
-* DACs
-* Webcams
-* Bluetooth Dongles
+* Mics (Micro)
+* DACs (Bộ giải mã âm thanh kỹ thuật số)
+* Webcams (camera)
+* Bluetooth Dongles (USB Bluetooth)
 
-The following SMBIOS need USBX:
+Các SMBIOS sau đây cần bổ sung USBX:
 
-* iMac17,x and newer
-* MacPro7,1 and newer
-* iMacPro1,1 and newer
-* Macmini8,1 and newer
-* MacBook9,x  and newer
-* MacBookAir8,x  and newer
-* MacBookPro13,x and newer
+* iMac17,x và mới hơn
+* MacPro7,1 và mới hơn
+* iMacPro1,1 và mới hơn 
+* Macmini8,1 và mới hơn 
+* MacBook9,x và mới hơn
+* MacBookAir8,x và mới hơn
+* MacBookPro13,x và mới hơn
 
-Luckily you can use a precompiled file for USBX: [SSDT-USBX](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/SSDT-USBX.aml)
+May phước là bạn có thể sử dụng một file được biên dịch sẵn cho USBX tại đây: [SSDT-USBX](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/SSDT-USBX.aml)

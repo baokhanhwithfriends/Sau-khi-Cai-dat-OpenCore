@@ -1,72 +1,72 @@
-# USB Mapping
+# Lập bản đồ cổng USB: Phương thức thủ công
 
-So with the prerequisites out of the way, we can finally get to the meat of this guide. And now we get to finally read one of my favorite books before I go to bed each night: [The Advanced Configuration and Power Interface (ACPI) Specification!](https://uefi.org/specs/ACPI/6.4/)
+Vậy là xong mấy cái thủ tục rườm rà, giờ chúng ta có thể đi vào phần chính. Và giờ là lúc chúng ta được đọc một trong những cuốn sách gối đầu giường yêu thích của tui trước khi đi ngủ: [Thông số kỹ thuật Giao diện nguồn và cấu hình nâng cao (ACPI)!](https://uefi.org/specs/ACPI/6.4/)
 
-Now if you haven't read through this before(which I highly recommend you do, it's a thrilling tale), I'll point you to the meat of the USB situation:
+Nếu bạn chưa từng đọc qua cái này (mình cực lực khuyên bạn nên đọc, nó là một câu chuyện ly kỳ hấp dẫn đó), mình sẽ chỉ cho bạn phần cốt lõi của vấn đề cổng USB:
 
-* Section 9.14: _UPC (USB Port Capabilities)
+* Mục 9.14: _UPC (Khả năng của cổng USB)
 
-Here we're greeted with all the possible USB ports in ACPI:
+Ở đây chúng ta được chào đón bởi tất cả các loại cổng USB có thể có trong ACPI:
 
-| Type | Info | Comments |
+| Type (Loại chân cắm) | Info (Thông tin) | Comments (Ghi chú) |
 | :--- | :--- | :--- |
-| 0 | USB 2.0 Type-A connector | This is what macOS will default all ports to when no map is present |
-| 3 | USB 3.0 Type-A connector | 3.0, 3.1 and 3.2 ports share the same Type |
-| 8 | Type C connector - USB 2.0-only | Mainly seen in phones
-| 9 | Type C connector - USB 2.0 and USB 3.0 with Switch | Flipping the device **does not** change the ACPI port |
-| 10 | Type C connector - USB 2.0 and USB 3.0 without Switch | Flipping the device **does** change the ACPI port. generally seen on 3.1/2 motherboard headers |
-| 255 | Proprietary connector | For Internal USB ports like Bluetooth |
+| 0 | USB 2.0 Type-A connector (Chân cắm kết nối chuẩn USB 2.0 loại A) | Đây là loại chân cắm mà macOS sẽ mặc định gán cho tất cả các cổng khi không có sơ đồ USB nào được nạp |
+| 3 | USB 3.0 Type-A connector (Chân cắm kết nối chuẩn USB 3.0 loại A) | Cổng 3.0, 3.1 và 3.2 đều xài chung loại này |
+| 8 | Type C connector - USB 2.0-only (Chân cắm kết nối USB 2.0 loại USB-C) | Thường thấy trên điện thoại
+| 9 | Type C connector - USB 2.0 and USB 3.0 with Switch (Chân cắm kết nối USB 2.0 và 3.0 loại USB-C, hỗ trợ xoay ngược) | Xoay ngược thiết bị rồi cắm **không làm** thay đổi loại cổng được khai báo trong ACPI |
+| 10 | Type C connector - USB 2.0 and USB 3.0 without Switch (Chân cắm kết nối USB 2.0 và 3.0 loại USB-C, không hỗ trợ xoay ngược) | Xoay ngược thiết bị rồi cắm **có làm** thay đổi loại cổng được khai báo trong ACPI, thường thấy trên các header 3.1/2 của bo mạch chủ |
+| 255 | Proprietary connector (Chân cắm độc quyền) | Dành cho các cổng USB nội bộ (tức là không có cổng cắm vật lý cho người dùng cắm mà chỉ là chân kết nối + sử dụng giao thức kết nối USB) như Bluetooth, webcam của laptop v.v |
 
-## USB Mapping: The manual way
+## Lập bản đồ cổng USB: Phương thức thủ công
 
-This section is for those who want to get down into the meats of their hackintosh, to really understand what it's doing and help if there's any issues with USBmap.py and other mapping tools. To start, we'll need a few things:
+Phần này dành cho mấy bác muốn chọc ngoáy sâu vào "nội tạng" con Hackintosh của mình, để thực sự hiểu nó đang làm cái gì và tự cứu lấy chính mình nếu mấy công cụ như USBmap.py dở chứng. Để bắt đầu, chúng ta cần vài thứ:
 
-* Installed version of macOS
-  * This is due to how macOS enumerates ports, trying to map from other OSes makes this difficult
-  * Note: This guide will be focusing on OS X 10.11, El Capitan and newer. Older OSes shouldn't require any USB mapping
-* Non-conflicting USB names
-  * See previous section: [Checking what renames you need](../system-preparation.md#checking-what-renames-you-need)
-* A USB 2.0 and USB 3.0 device to test with
-  * You must have 2 separate devices as to ensure no mix ups with personalities
+* Đã cài đặt macOS
+  * Lý do là vì cách macOS liệt kê các cổng, cố lập sơ đồ bằng hệ điều hành khác sẽ làm khó bản thân.
+  * Lưu ý: Hướng dẫn này tập trung vào OS X 10.11, El Capitan và mới hơn. Với hệ điều hành Mac cũ hơn thường không cần lập sơ đồ USB (bạn vẫn có thể lập nếu muốn).
+* Tên USB không bị xung đột
+  * Đọc lại phần trước: [Kiểm tra xem cần đổi tên cái gì](../system-preparation.md#kiem-tra-xem-can-đoi-ten-cai-gi)
+* Một thiết bị USB 2.0 và một thiết bị USB 3.0 để test
+  * Bạn phải có 2 thiết bị riêng biệt để bảo đảm không bị nhầm lẫn giữa các "chế độ cổng" của cổng USB (bạn sẽ hiểu rõ hơn ở khúc sau).
 * [IORegistryExplorer.app](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip)
-  * To view the inner workings of macOS more easily
-  * If you plan to use Discord for troubleshooting, [v2.1.0](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-210.zip) is a bit easier on file size.
+  * Để soi nội tạng của macOS dễ dàng hơn.
+  * Nếu bạn định dùng Discord để nhờ trợ giúp, xài bản [v2.1.0](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-210.zip) sẽ nhẹ hơn để gửi file.
 * [USBInjectAll](https://bitbucket.org/RehabMan/os-x-usb-inject-all/downloads/)
-  * This is only required for older USB controllers like Broadwell and older, however some Coffee Lake systems may still require it
-  * **Reminder** this kext does not work on AMD
+  * Cái này chỉ cần cho các bộ điều khiển USB cũ như đời CPU Broadwell trở về trước, tuy nhiên một số hệ thống Coffee Lake vẫn có thể cần nó.
+  * **Nhắc lại lần nữa** kext này không xài được trên máy AMD.
 * [Sample-USB-Map.kext](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/Sample-USB-Map.kext.zip)
 * [ProperTree](https://github.com/corpnewt/ProperTree)
-  * Or any other plist editor
+  * Hoặc bất kỳ trình chỉnh sửa plist nào khác.
   
-Now with all this out of the way, lets get to USB mapping!
+Giờ xong phần chuẩn bị rồi, bắt đầu lập sơ đồ USB thôi!
 
-## Finding your USB ports
+## Tìm ra cổng USB của bạn
 
-Lets open our previously downloaded [IORegistryExplorer.app](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip) and search for our USB controller(s).
+Mở cái [IORegistryExplorer.app](https://github.com/khronokernel/IORegistryClone/blob/master/ioreg-302.zip) đã tải lúc nãy lên và tìm (các) bộ điều khiển USB của bạn.
 
-The 2 main search terms are `XHC` and `EHC`, but if you have a legacy board with UHCI or OHCI controllers you'll need to adjust. A blanket `USB` search may show too many entries and confuse you.
+2 từ khóa chính để tìm là `XHC` và `EHC`, nhưng nếu bạn dùng mainboard đời tống với bộ điều khiển UHCI hoặc OHCI thì phải tìm tên khác. Tìm kiếm từ khóa chung chung như `USB` sẽ ra quá nhiều kết quả làm bạn rối bời tâm trí đó.
 
-For this example, lets try and map an Asus X299-E Strix board:
+Ví dụ này, chúng ta sẽ thử lập sơ đồ cho con main Asus X299-E Strix:
 
 ![](../../images/post-install/manual-md/initial-boot.png)
 
-From the above image we can see 3 USB controllers:
+Từ hình trên chúng ta thấy có 3 bộ điều khiển USB:
 
-* PXSX(1, Top)
-* PXSX(2, Middle)
-* XHCI(3, Bottom)
+* PXSX(1, Trên cùng)
+* PXSX(2, Giữa)
+* XHCI(3, Dưới cùng)
 
-Pay attention that they're individual controllers, as this means **each USB controller has it's own port limit**. So you're not as starved for USB ports as you may think.
+Chú ý rằng tụi nó là các bộ điều khiển riêng biệt, nghĩa là **mỗi bộ điều khiển USB có giới hạn cổng riêng của nó**. Nên bạn không đến mức "đói" cổng USB như bạn nghĩ đâu.
 
-Now I personally know which USB controllers match up with which physical ports, problem is it's not always as obvious which ports match with which controllers. So lets try to figure out which is what.
+Giờ thì mình biết thừa bộ điều khiển nào ứng với cổng vật lý nào rồi, nhưng vấn đề là không phải lúc nào cũng dễ nhìn ra cổng nào khớp với bộ điều khiển nào. Nên hãy cùng tìm hiểu xem cái nào là cái nào.
 
-**Note**: The AppleUSBLegacyRoot entry is an entry that lists all active USB controllers and ports, these are not USB controllers themselves so you can outright ignore them.
+**Lưu ý**: Mục AppleUSBLegacyRoot là mục liệt kê tất cả các bộ điều khiển và cổng USB đang hoạt động, bản thân chúng không phải là bộ điều khiển USB nên bạn có thể mặc kệ nó đi.
 
-**Note 2**: Keep in mind every motherboard model will have a unique set of port combos, controller types and names. So while our example uses PXSX, yours might have the XHC0 or PTCP name. And quite common on older motherboards is that you may only have 1 controller, this is alright so don't stress about having the exact same setup as the example.
+**Lưu ý số 2**: Nhớ là mỗi model mainboard sẽ có một bộ combo cổng, loại bộ điều khiển và tên gọi khác nhau. Nên ví dụ của mình xài PXSX, nhưng của bạn có thể là XHC0 hoặc PTCP. Và trên các mainboard cũ thường chỉ có 1 bộ điều khiển thôi, chuyện này bình thường nên đừng hoảng nếu không giống y chang ví dụ.
 
-Common names you can check:
+Các tên thông dụng bạn có thể kiểm tra:
 
-* USB 3.x controllers:
+* Bộ điều khiển USB 3.x:
   * XHC
   * XHC0
   * XHC1
@@ -75,229 +75,229 @@ Common names you can check:
   * XHCX
   * AS43
   * PTXH
-    * Commonly associated with AMD Chipset controllers
+    * Bộ điều khiển có trên Chipset AMD hay sử dụng tên quy ước này
   * PTCP
-    * Found on AsRock X399
+    * Sẽ gặp trên main AsRock X399, trong bảng ACPI mấy cổng này thiệt ra nói là PXTX nhưng macOS lại liệt kê tên khác
   * PXSX
-    * This is a generic PCIe device, **double check it's a USB device** as NVMe controllers and other devices can use the same name.
-* USB 2.x controllers:
+    * Đôi khi nó là thiết bị PCIe chung chung, **hớ kiểm tra kỹ xem nó có phải là thiết bị USB không nha**, vì bộ điều khiển của ổ cứng SSD NVMe và các thiết bị PCIe khác cũng có thể xài tên này.
+* Bộ điều khiển USB 2.x:
   * EHCI
   * EHC1
   * EHC2
   * EUSB
   * USBE
 
-### Finding which ports match with which controller
+### Tìm xem cổng nào thuộc sự quản lý của bộ điều khiển nào
 
-To start, I'm going to plug a USB device into my front USB 3.1(Type-A) and 3.2(Type-C):
+Để bắt đầu, mình sẽ cắm một thiết bị USB vào cổng trước 3.1(Type-A) và 3.2(Type-C):
 
 ![](../../images/post-install/manual-md/front-io-plugged.png)
 
-Next lets look at IOReg, and we can see where our USB devices fell:
+Tiếp theo nhìn vào IOReg, và chúng ta có thể thấy thiết bị USB của mình rơi vào đâu:
 
 | USB-C | USB-A |
 | :--- | :--- |
 | ![](../../images/post-install/manual-md/usb-c-test.png) | ![](../../images/post-install/manual-md/usb-a-test-3.png) |
 
-Here we see a few things:
+Ở đây chúng ta thấy vài thứ:
 
-* Front 3.2 Type-C is on the PXSX(2, middle) Controller
-* Front 3.1 Type-A is on the XHCI(3, Bottom) Controller
+* Cổng trước 3.2 Type-C nằm trên Bộ điều khiển PXSX (2, giữa).
+* Cổng trước 3.1 Type-A nằm trên Bộ điều khiển XHCI (3, Dưới cùng).
 
-Now that we have an idea of which ports go to which controller, can can now look into how we USB map.
+Giờ đã biết sơ sơ cổng nào đi với bộ điều khiển nào rồi, chúng ta có thể xem cách map USB.
 
-### USB-A mapping
+### Lập sơ đồ cổng USB-A
 
-As mentioned before, USB 3.x ports are split into 2 personalities: USB 2.0 and USB 3.0. This is to ensure backwards compatibility but macOS itself has difficulties determining which personalities match up to which ports. That's where we come in to help.
+Như đã nói trước đó, cổng USB 3.x được chia thành 2 chế độ: USB 2.0 và USB 3.0. USB được thiết kế như vầy để bảo đảm tính tương thích ngược nhưng bản thân macOS gặp khó khăn trong việc xác định chế độ nào khớp với cổng nào. Đó là lúc chúng ta ra tay giúp đỡ con mặt cười.
 
-So lets take our USB-A port, when we plug in a USB 3.0 device into it we see `XHCI -> SS03` light up. This is the USB 3.0 personality of the port. Now we'll want to plug a USB 2.0 device into that port:
+Lấy cái cổng USB-A của chúng ta, khi cắm thiết bị USB 3.0 vào, ta thấy `XHCI -> SS03` sáng lên. Đây là chế độ USB 3.0 của cổng đó. Giờ cắm thiết bị USB 2.0 vào cổng đó:
 
-| 3.0 Personality | 2.0 Personality |
+| Chế độ 3.0 | Chế độ 2.0 |
 | :--- | :--- |
 | ![](../../images/post-install/manual-md/usb-a-test-4.png) | ![](../../images/post-install/manual-md/usb-a-test-2.png) |
 
-We see that the USB 2.0 personality of our 3.0 port is `XHCI -> HS03`, now you should be able to get an idea of what we're trying to do:
+Chúng ta thấy chế độ USB 2.0 của cổng 3.0 đó là `XHCI -> HS03`, giờ bạn đã hình dung được chúng ta đang cố làm gì rồi hả:
 
-* Front Type-A:
-  * HS03: 2.0 Personality
-  * SS03: 3.0 Personality
+* Cổng Type-A mặt trước:
+  * HS03: Chế độ 2.0
+  * SS03: Chế độ 3.0
 
-**Note**: If your USB ports show up as either AppleUSB20XHCIPort or AppleUSB30XHCIPort, you can still map however it will be a bit more difficult. Instead of writing down the names, pay very close attention to the `port` property on the right hand side:
+**Lưu ý**: Nếu cổng USB của bạn hiện lên là AppleUSB20XHCIPort hoặc AppleUSB30XHCIPort, bạn vẫn có thể map nhưng sẽ khó hơn chút. Thay vì ghi lại tên, hãy chú ý thật kỹ vào thuộc tính `port` ở phía bên phải:
 
 ![](../../images/post-install/manual-md/location-id.png)
 
-### Creating a personal map
+### Tạo bản đồ riêng cho máy của bạn
 
-This is where we pull out pen and paper, and start to write down which ports physically match up with which digital ports. An example of what your map can look like:
+Đây là lúc lôi giấy bút ra và bắt đầu ghi chép xem cổng vật lý nào tương ứng với cổng kỹ thuật số nào. Ví dụ về bản đồ của bạn trông sẽ như thế này:
 
-| Name Mapping | Property Mapping |
+| Sơ đồ theo tên | Sơ đồ theo thuộc tính |
 | :--- | :--- |
 | ![](../../images/post-install/manual-md/front-io-diagram.png) | ![](../../images/post-install/manual-md/full-diagram-port.png) |
 
-Your own map doesn't need to look exactly like this, however you'll want something that you can easily understand and refer to down the line.
+Bản đồ của bạn không cần đẹp như vầy đâu, miễn là bạn hiểu và dễ tra cứu sau này là được.
 
-Note:
+Lưu ý:
 
-* Name Mapping: When a proper name shows up in IOReg(ie. HS01)
-* Property Mapping: When no proper name is given(ie. AppleUSB30XHCIPort)
+* Sơ đồ theo tên : Khi tên chuẩn hiện ra trong IOReg (ví dụ HS01).
+* Sơ đồ theo thuộc tính: Khi không có tên chuẩn (ví dụ AppleUSB30XHCIPort).
 
-### USB-C mapping
+### Lập sơ đồ cổng USB-C
 
-Next lets map our USB-C port, this is where it gets quite tricky as you may have noticed earlier:
+Tiếp theo là lập sơ đồ cổng USB-C, cái này hơi khoai như bạn đã để ý lúc nãy:
 
-| Type | Info | Comments |
+| Type (Loại chân cắm) | Info (Thông tin) | Comments (Ghi chú) |
 | :--- | :--- | :--- |
-| 8 | Type C connector - USB 2.0-only | Mainly seen in phones |
-| 9 | Type C connector - USB 2.0 and USB 3.0 with Switch | Flipping the device **does not** change the ACPI port |
-| 10 | Type C connector - USB 2.0 and USB 3.0 without Switch | Flipping the device **does** change the ACPI port. generally seen on 3.1/2 motherboard headers |
+| 8 | Type C connector - USB 2.0-only (Chân cắm kết nối USB 2.0 loại USB-C) | Thường thấy trên điện thoại
+| 9 | Type C connector - USB 2.0 and USB 3.0 with Switch (Chân cắm kết nối USB 2.0 và 3.0 loại USB-C, hỗ trợ xoay ngược) | Xoay ngược thiết bị rồi cắm **không làm** thay đổi loại cổng được khai báo trong ACPI |
+| 10 | Type C connector - USB 2.0 and USB 3.0 without Switch (Chân cắm kết nối USB 2.0 và 3.0 loại USB-C, không hỗ trợ xoay ngược) | Xoay ngược thiết bị rồi cắm **có làm** thay đổi loại cổng được khai báo trong ACPI, thường thấy trên các header 3.1/2 của bo mạch chủ |
 
-So when we map our USB-C header, we notice it occupies the SS01 port. But when we flip it, we actually populate it on the SS02 port. When this happens, you'll want to write this down for when we apply the port type.
+Khi map header USB-C, chúng ta thấy nó chiếm cổng SS01. Nhưng khi lật ngược đầu cắm lại, nó lại nhảy sang cổng SS02. Khi chuyện này xảy ra, bạn cần ghi chú lại để chọn loại cổng cho đúng.
 
-* Note: All personalities from this port will be put under the Type 10
-* Note 2: Not all USB-C headers will be Type 10, **double check yours**
+* Lưu ý: Tất cả các chế độ USB từ cổng này sẽ được đặt là Type 10.
+* Lưu ý số 2: Không phải tất cả header USB-C đều là Type 10, **kiểm tra kỹ cái của bạn nha**
 
 ![](../../images/post-install/manual-md/usb-c-test-2.png)
 
-### Continuing mapping
+### Lập sơ đồ cổng USB bị "xổng chuồng"
 
-Now that you have the basic idea, you'll want to go around with every USB port and map it out. This will take time, and don't forget to write it down. Your final diagram should look similar to this:
+Giờ đã nắm được ý tưởng cơ bản, bạn cần dò xung quanh và lập sơ đồ hết mọi cổng USB xuất hiện. Việc này tốn thời gian đó, cũng đừng quên ghi chép lại. Sơ đồ cuối cùng của bạn sẽ trông na ná như vầy:
 
 ![](../../images/post-install/manual-md/full-diagram.png)
 
-### Special Notes
+### Lưu ý đặc biệt
 
 * [Bluetooth](#bluetooth)
-* [USRx Ports](#usrx-ports)
-* [Missing USB Ports](#missing-usb-ports)
+* [Cổng USRx](#cong-usrx)
+* [Lập sơ đồ cổng USB bị "xổng chuồng"](#lap-so-do-cong-usb-bi-xong-chuong)
 
 #### Bluetooth
 
-So while not obvious to many, Bluetooth actually runs over the USB interface internally. This means that when mapping, you'll need to pay close attention to devices that already show up in IOReg:
+Tuy không rõ ràng với nhiều người, nhưng Bluetooth thực chất chạy qua giao diện USB nội bộ. Nghĩa là khi lập sơ đồ, bạn cần chú ý kỹ các thiết bị đã hiện sẵn trong IOReg:
 
 ![](../../images/post-install/manual-md/bluetooth.png)
 
-Keep this in mind, as this plays into the Type 255 and getting certain services like handoff working correctly.
+Nhớ kỹ cái này, vì nó liên quan đến Type 255 và làm cho các dịch vụ như Handoff hoạt động chuẩn.
 
-#### USRx Ports
+#### Cổng USRx
 
-When mapping, you may notice some extra ports left over, specifically USR1 and USR2. These ports are known as "USBR" ports, or more specifically [USB Redirection Ports](https://software.Intel.com/content/www/us/en/develop/documentation/amt-developer-guide/top/storage-redirection.html). Use of these is for remote management but real Macs don't ship with USBR devices and so has no support for them OS-wise. You can actually ignore these entries in your USB map:
+Khi lập sơ đồ, bạn có thể thấy dư ra vài cổng lạ, cụ thể là USR1 và USR2. Mấy cổng này kêu là "USBR" ports, hay cụ thể hơn là [Cổng chuyển hướng USB](https://software.Intel.com/content/www/us/en/develop/documentation/amt-developer-guide/top/storage-redirection.html). Tụi nó xài cho quản lý từ xa nhưng máy Mac thật không có thiết bị USBR nên hệ điều hành không hỗ trợ. Bạn có thể bơ đẹp mấy mục này trong sơ đồ USB của mình:
 
 ![](../../images/post-install/manual-md/usr.png)
 
-#### Missing USB ports
+#### Lập sơ đồ cổng USB bị "xổng chuồng"
 
-In some rare situations, certain USB ports may not show up in macOS at all. This is likely due to a missing definition in your ACPI tables, and so we have a few options:
+Trong vài trường hợp hiếm, một số cổng USB có thể không hiện lên trong macOS. Khả năng cao là do thiếu định nghĩa trong bảng ACPI, nên chúng ta có vài lựa chọn:
 
-* Coffee Lake and older should use [USBInjectAll](https://github.com/Sniki/OS-X-USB-Inject-All/releases)
-  * Don't forget to add this to both EFI/OC/Kexts and you config.plist's kernel -> Add
-* Comet Lake and newer should use SSDT-RHUB
-* AMD systems should also use SSDT-RHUB
+* Coffee Lake và cũ hơn nên xài [USBInjectAll](https://github.com/Sniki/OS-X-USB-Inject-All/releases)
+  * Đừng quên thêm cái này vào EFI/OC/Kexts và cả config.plist của bạn trong mục kernel -> Add
+* Comet Lake và mới hơn nên sử dụng SSDT-RHUB.
+* Máy tính AMD cũng nên xài SSDT-RHUB.
 
-SSDT-RHUB's purpose is to reset your USB controller, and force macOS to reenumerate them. This avoids the hassle of trying to patch your existing ACPI tables.
+Mục đích của SSDT-RHUB là reset bộ điều khiển USB của bạn, ép macOS liệt kê lại tụi nó. Giúp tránh rắc rối khi cố vá các bảng ACPI hiện có.
 
-To create your own SSDT-RHUB-MAP:
+Để tạo SSDT-RHUB-MAP của riêng bạn:
 
-* Grab a copy of the SSDT: [SSDT-RHUB.dsl](https://github.com/dortania/Getting-Started-With-ACPI/blob/master/extra-files/decompiled/SSDT-RHUB.dsl)
-* Grab [maciASL](https://github.com/acidanthera/MaciASL/releases/tag/1.5.7)
+* Tải bản sao của SSDT: [SSDT-RHUB.dsl](https://github.com/dortania/Getting-Started-With-ACPI/blob/master/extra-files/decompiled/SSDT-RHUB.dsl)
+* Tải [maciASL](https://github.com/acidanthera/MaciASL/releases/tag/1.5.7)
 
-Next, open our newly downloaded SSDT with maciASL, you should be presented with the following:
+Tiếp theo, mở file SSDT vừa tải bằng maciASL, bạn sẽ thấy như sau:
 
 ![](../../images/post-install/manual-md/ssdt-rhub-normal.png)
 
-Now, open IOReg and find the USB controller you want to reset(pay very close attention its the USB controller and not the child RHUB with the same name):
+Giờ mở IOReg và tìm bộ điều khiển USB bạn muốn reset (chú ý thật kỹ là bộ điều khiển USB chứ không phải thằng con RHUB có cùng tên nha):
 
-If you look to the right side, you should see the `acpi-apth` property. Here we're going to need to translate it to something our SSDT can use:
+Nhìn sang bên phải, bạn sẽ thấy thuộc tính `acpi-apth`. Ở đây chúng ta cần dịch nó sang cái gì đó mà SSDT có thể tái sử dụng:
 
 ```sh
-# before modifying
+# Trước khi chỉnh sửa
 IOService:/AppleACPIPlatformExpert/PC00@0/AppleACPIPCI/RP05@1C,4/IOPP/PXSX@0
 ```
 
-Now we'll want to strip out any unnecessary data:
+Giờ chúng ta lọc/loại bỏ mấy cái dữ liệu thừa không cần thiết:
 
 * `IOService:/AppleACPIPlatformExpert/`
 * `@##`
 * `IOPP`
 
-Once cleaned up, yours should look similar:
+Sau khi dọn dẹp, của bạn trông sẽ giống vầy:
 
 ```sh
-# After modifying
+# Sau khi chỉnh sửa
 PC00.RP05.PXSX
 ```
 
-Following the example from above, we'll be renaming `PCI0.XHC1.RHUB` to `PC00.RP05.PXSX.RHUB`:
+Theo ví dụ trên, chúng ta sẽ đổi tên `PCI0.XHC1.RHUB` thành `PC00.RP05.PXSX.RHUB`:
 
-**Before**:
+**Trước khi sửa**:
 
 ```
-External (_SB_.PCI0.XHC1.RHUB, DeviceObj) <- Rename this
+External (_SB_.PCI0.XHC1.RHUB, DeviceObj) <- Đổi tên cái này
 
-Scope (_SB.PCI0.XHC1.RHUB) <- Rename this
+Scope (_SB.PCI0.XHC1.RHUB) <- Đổi tên cái này
 ```
 
 ![](../../images/post-install/manual-md/ssdt-rhub.png)
 
 Following the example pathing we found, the SSDT should look something like this:
 
-**After**:
+**Sau khi sửa**:
 
 ```
-External (_SB.PC00.RP05.PXSX.RHUB, DeviceObj) <- Renamed
+External (_SB.PC00.RP05.PXSX.RHUB, DeviceObj) <- Đã đổi tên 
 
-Scope (_SB.PC00.RP05.PXSX.RHUB) <- Renamed
+Scope (_SB.PC00.RP05.PXSX.RHUB) <- Đã đổi tên
 ```
 
 ![](../../images/post-install/manual-md/ssdt-rhub-fixed.png)
 
-Once you've edited the SSDT to your USB controller's path, you can export it with `File -> SaveAs -> ACPI Machine Language Binary`:
+Khi đã sửa xong SSDT theo đường dẫn bộ điều khiển USB của bạn, bạn có thể xuất nó ra bằng `File -> Save As -> ACPI Machine Language Binary`:
 
 ![](../../images/post-install/manual-md/ssdt-save.png)
 
-Finally, remember to add this SSDT to both EFI/OC/ACPI and your config.plist under ACPI -> Add.
+Cuối cùng, nhớ thêm SSDT này vào cả EFI/OC/ACPI và config.plist dưới mục ACPI -> Add.
 
-## Creating our kext
+## Tạo kext riêng của chúng ta
 
-Its the time you've all been waiting for, we finally get to create our USB map!
+Giây phút mọi người chờ đợi đã đến, cuối cùng chúng ta cũng được tạo bản đồ USB!
 
-First off, we'll want to grab a sample USB map kext:
+Đầu tiên, tải kext sơ đồ USB mẫu:
 
 * [Sample-USB-Map.kext](https://github.com/dortania/OpenCore-Post-Install/blob/master/extra-files/Sample-USB-Map.kext.zip)
 
-Next right click the .kext, and select `Show Package Contents`. then drill down to the info.plist:
+Chuột phải vào file .kext, chọn `Show Package Contents` (Hiển thị nội dung gói), rồi đi sâu vào tìm info.plist:
 
-| Show Contents | info.plist |
+| Hiển thị nội dung gói | info.plist |
 | :--- | :--- |
 | ![](../../images/post-install/manual-md/show-contents.png) | ![](../../images/post-install/manual-md/info-plist.png) |
 
-Now lets open ProperTree and look at this info.plist:
+Giờ mở ProperTree và xem file info.plist này:
 
 ![](../../images/post-install/manual-md/info-plist-open.png)
 
-Here we see a few sections, under `IOKitPersonalities`:
+Ở đây chúng ta thấy một số mục, dưới `IOKitPersonalities`:
 
 * RP05 - PXSX(1)
 * RP07 - PXSX(2)
 * XHCI - XHCI
 
-Each entry here represents a USB controller, specifically the map for each controller. The names of the entry don't matter much however, it's more for book keeping so you know which entry to has which USB map.
+Mỗi mục ở đây đại diện cho một bộ điều khiển USB, cụ thể là bản đồ cho từng bộ điều khiển. Tên của mục không quan trọng lắm đâu, nó chủ yếu để bạn dễ quản lý xem mục nào chứa bản đồ nào thôi.
 
-Next lets head into the `RP05 - PXSX(1)` entry:
+Tiếp theo vào mục `RP05 - PXSX(1)`:
 
 ![](../../images/post-install/manual-md/rp05-entry.png)
 
-Here we see a few more important properties:
+Ở đây chúng ta thấy vài thuộc tính quan trọng:
 
-| Property | Comment |
+| Property (Thuộc tính) | Comment (Ghi chú) |
 | :--- | :--- |
-| IOPathMatch | The device macOS will choose to attach the map to |
-| IOProviderClass | The USB driver macOS will choose to attach |
-| model | The SMBIOS the USB map attaches too|
-| IOProviderMergeProperties | The dictionary holding the actual port map |
+| IOPathMatch | Thiết bị mà macOS sẽ chọn để gắn bản đồ vào |
+| IOProviderClass | Trình điều khiển USB mà macOS sẽ chọn để gắn vào |
+| model | SMBIOS mà bản đồ USB gắn vào |
+| IOProviderMergeProperties | Từ điển (dictionary) chứa bản đồ cổng thực tế |
 
-### Determining the properties
+### Xác định các thuộc tính
 
-Determining the value for each property is actually quite straight forward:
+Xác định giá trị cho mỗi thuộc tính thực ra khá đơn giản:
 
 * [IOPathMatch](#iopathmatch)
 * [IOProviderClass](#ioproviderclass)
@@ -306,31 +306,31 @@ Determining the value for each property is actually quite straight forward:
 
 #### IOPathMatch
 
-Finding IOPathMatch is super easy, first find the USB controller you want to map and then select the Root HUB(so the PXSX child with the same name as the parent, don't worry it's less confusing when you look at the image):
+Tìm IOPathMatch siêu dễ, đầu tiên tìm bộ điều khiển USB bạn muốn lập sơ đồ và chọn Root HUB (đứa con PXSX có cùng tên với cha, đừng lo nhìn hình sẽ đỡ rối hơn):
 
 ![](../../images/post-install/manual-md/iopath-match.png)
 
-Now with the PXSX entry selected, simply copy(Cmd+C) and paste it into our info.plist. Your property should look similar to the below:
+Với mục PXSX được chọn, copy (Cmd+C) và paste vào info.plist của chúng ta. Thuộc tính của bạn sẽ trông giống thế này:
 
 ```
 IOService:/AppleACPIPlatformExpert/PC00@0/AppleACPIPCI/RP05@1C,4/IOPP/PXSX@0/PXSX@01000000
 ```
 
-**Note**: Each USB Controller will have a unique IOPathMatch value, keep this in mind if you have multiple controllers of the same name. This Asus X299 board has 2 PXSX USB controllers, so each new USB map dictionary will have a unique entry for IOPathMatch.
+**Lưu ý**: Mỗi Bộ điều khiển USB sẽ có một giá trị IOPathMatch duy nhất, nhớ kỹ điều này nếu bạn có nhiều bộ điều khiển cùng tên. Con main Asus X299 này có 2 bộ điều khiển USB PXSX, nên mỗi từ điển bản đồ USB mới sẽ có một mục IOPathMatch riêng biệt.
 
 #### IOProviderClass
 
-Finding IOProviderClass is also easy, select the Root-hub once again and look for the CFBundleIdentifier value:
+Tìm IOProviderClass cũng dễ, chọn Root-hub lần nữa và tìm giá trị CFBundleIdentifier:
 
 | IOReg | info.plist |
 | :--- | :--- |
 | ![](../../images/post-install/manual-md/ioproviderclass.png) | ![](../../images/post-install/manual-md/iorpoviderclass-plist.png) |
 
-Now we can't take that value 1-1, instead we need to trim it to the Kext's short name being `AppleUSBXHCIPCI`(So we removed `com.apple.driver.usb.`)
+Giờ chúng ta không thể lấy nguyên xi giá trị đó, thay vào đó cần cắt bớt lấy tên ngắn gọn của Kext là `AppleUSBXHCIPCI`(Tức là bỏ phần `com.apple.driver.usb.`) đi
 
 #### model
 
-If you've forgotten what SMBIOS you're using, you can simply check the top level device in IOReg:
+Nếu bạn quên mình đang dùng SMBIOS nào, chỉ cần kiểm tra thiết bị ở cấp cao nhất trong IOReg:
 
 | IOReg | info.plist |
 | :--- | :--- |
@@ -338,84 +338,84 @@ If you've forgotten what SMBIOS you're using, you can simply check the top level
 
 ### IOProviderMergeProperties
 
-Now lets open the IOProviderMergeProperties dictionary:
+Giờ mở từ điển IOProviderMergeProperties ra:
 
 ![](../../images/post-install/manual-md/ioprovidermerge.png)
 
-Here we have a lot of data to work through:
+Ở đây chúng ta có khá nhiều dữ liệu cần xử lý:
 
-| Property | Comment |
+| Property (Thuộc tính) | Comment (Ghi chú) |
 | :--- | :--- |
-| name | The name of the USB port's dictionary |
-| port-count | This is the largest port value you're injecting |
-| UsbConnector | This is the type of USB port as mentioned in the ACPI 9.14 section |
-| port | The physical location of your USB port in ACPI |
-| Comment | An optional entry to help you keep track of all your ports |
+| name | Tên của từ điển cổng USB |
+| port-count | Đây là giá trị cổng lớn nhất bạn đang nạp vào |
+| UsbConnector | Đây là loại cổng USB như đã đề cập trong phần ACPI 9.14 |
+| port | Vị trí vật lý của cổng USB trong ACPI |
+| Comment | Một mục tùy chọn để giúp bạn theo dõi các cổng của mình |
 
-And a reminder of all possible port types:
+Và nhắc lại về tất cả các loại cổng có thể có:
 
-| Type | Info | Comments |
+| Type (Loại chân cắm) | Info (Thông tin) | Comments (Ghi chú) |
 | :--- | :--- | :--- |
-| 0 | USB 2.0 Type-A connector | This is what macOS will default all ports to when no map is present |
-| 3 | USB 3.0 Type-A connector | 3.0, 3.1 and 3.2 ports share the same Type |
-| 8 | Type C connector - USB 2.0-only | Mainly seen in phones
-| 9 | Type C connector - USB 2.0 and USB 3.0 with Switch | Flipping the device **does not** change the ACPI port |
-| 10 | Type C connector - USB 2.0 and USB 3.0 without Switch | Flipping the device **does** change the ACPI port. generally seen on 3.1/2 motherboard headers |
-| 255 | Proprietary connector | For Internal USB ports like Bluetooth |
+| 0 | USB 2.0 Type-A connector (Chân cắm kết nối chuẩn USB 2.0 loại A) | Đây là loại chân cắm mà macOS sẽ mặc định gán cho tất cả các cổng khi không có sơ đồ USB nào được nạp |
+| 3 | USB 3.0 Type-A connector (Chân cắm kết nối chuẩn USB 3.0 loại A) | Cổng 3.0, 3.1 và 3.2 đều xài chung loại này |
+| 8 | Type C connector - USB 2.0-only (Chân cắm kết nối USB 2.0 loại USB-C) | Thường thấy trên điện thoại
+| 9 | Type C connector - USB 2.0 and USB 3.0 with Switch (Chân cắm kết nối USB 2.0 và 3.0 loại USB-C, hỗ trợ xoay ngược) | Xoay ngược thiết bị rồi cắm **không làm** thay đổi loại cổng được khai báo trong ACPI |
+| 10 | Type C connector - USB 2.0 and USB 3.0 without Switch (Chân cắm kết nối USB 2.0 và 3.0 loại USB-C, không hỗ trợ xoay ngược) | Xoay ngược thiết bị rồi cắm **có làm** thay đổi loại cổng được khai báo trong ACPI, thường thấy trên các header 3.1/2 của bo mạch chủ |
+| 255 | Proprietary connector (Chân cắm độc quyền) | Dành cho các cổng USB nội bộ (tức là không có cổng cắm vật lý cho người dùng cắm mà chỉ là chân kết nối + sử dụng giao thức kết nối USB) như Bluetooth, webcam của laptop v.v |
 
-It should be coming full circle now, as you can see how our previous work with mapping out our ports works.
+Giờ thì mọi thứ đã sáng tỏ, bạn có thể thấy công sức lập sơ đồ cổng trước đó giờ phát huy tác dụng thế nào.
 
 #### Name
 
-The name property is actually the name of the USB port's dictionary, and is used solely for house keeping. Keep in mind every USB port you want to use needs to have its own unique USB port dictionary.
+Thuộc tính name thực ra là tên của từ điển cổng USB và chỉ dùng để quản lý thôi. Nhớ là mỗi cổng USB bạn muốn dùng phải có từ điển cổng USB riêng biệt.
 
-The name itself holds no value besides showing up in IOReg and so this can be whatever you like. To keep this sane, we use the name already given by our ACPI tables(in this case HS01) but the name can be any 4 character entry. However do not go over this 4 char limit, as unintended side effects can happen.
+Bản thân cái tên không có giá trị gì ngoài việc xuất hiện trong IOReg nên bạn đặt gì cũng được. Để cho đỡ loạn, chúng ta xài tên đã được cung cấp trong bảng ACPI (trường hợp này là HS01) nhưng tên có thể là bất kỳ ký tự nào dài 4 chữ cái. Tuy nhiên đừng vượt quá giới hạn 4 ký tự này, kẻo gây ra tác dụng phụ không mong muốn.
 
-* Note: Those with AppleUSB20XHCIPort or AppleUSB30XHCIPort names for USB ports, you should choose a name easy to identify. On Intel, this is HSxx for 2.0 personalities and SSxx for 3.0 personalities
+* Lưu ý: Với những ai có tên cổng là AppleUSB20XHCIPort hoặc AppleUSB30XHCIPort, bạn nên chọn tên dễ nhận biết. Trên máy Intel, chế độ 2.0 thường là HSxx và SSxx cho chế độ 3.0.
 
 ![](../../images/post-install/manual-md/name.png)
 
 #### port
 
-To find the `port` value, simply select your USB port in IOReg and look for the `port` entry:
+Để tìm giá trị `port`, đơn giản chọn cổng USB của bạn trong IOReg và tìm mục `port`:
 
 | IOReg | info.plist |
 | :--- | :--- |
 | ![](../../images/post-install/manual-md/port.png) | ![](../../images/post-install/manual-md/port-plist.png) |
 
-From here we get `<03 00 00 00>`, you can simply remove any spaces and add it to your USB map
+Từ đây chúng ta có `<03 00 00 00>`, bạn chỉ cần xóa khoảng trắng và thêm nó vào bản đồ USB của bạn.
 
 #### port-count
 
-The final value remaining, look back at your USB map and see which `port` entry is the largest:
+Giá trị cuối cùng còn lại, nhìn lại bản đồ USB của bạn và xem mục `port` nào lớn nhất:
 
 ![](../../images/post-install/manual-md/port-count.png)
 
-Here we see the largest in PXSX(1) is `<04000000>`, do keep in mind that `port` uses hexadecimal if you get any letters in your USB map.
+Ở đây chúng ta thấy cái lớn nhất trong PXSX(1) là `<04000000>`, nhớ là `port` xài hệ thập lục phân nếu bạn thấy chữ cái nào trong bản đồ USB của mình.
 
-### Continuing on
+### Tiếp tục nào
 
-Now that we've gone over how to map your USB ports for a specific controller, you should have enough understanding to map more controllers. The sample USB-Map.kext I provided has 3 USB controllers listed in it(PXSX-1, PXSX-2 and XHCI). Remember to edit accordingly and to remove any unnecessary maps.
+Giờ chúng ta đã đi qua cách map cổng USB cho một bộ điều khiển cụ thể, bạn đã đủ kiến thức để map thêm các bộ điều khiển khác. Sample-USB-Map.kext tui cung cấp có 3 bộ điều khiển USB được liệt kê (PXSX-1, PXSX-2 và XHCI). Nhớ chỉnh sửa cho phù hợp và xóa mấy cái map thừa đi nhé.
 
-## Cleaning up
+## Tổng kết
 
-Once your saved your USB map's info.plist, remember to add the kext to both your EFI/OC/Kexts and under you config.plist's Kernel -> Add(ProperTree's snapshot can do this for you)
+Khi đã lưu info.plist của bản đồ USB, nhớ thêm kext vào cả EFI/OC/Kexts và dưới mục Kernel -> Add trong config.plist (tính năng snapshot của ProperTree có thể làm hộ bạn cái này).
 
-Next, remove/disable:
+Tiếp theo, xóa/vô hiệu hóa mấy cái sau:
 
-* USBInjectAll.kext(if you're using it)
-  * Reason for this is USBInjectAll actually breaks how Apple builds port maps. So while it's great for initial port mapping, it can break you final USB map
+* USBInjectAll.kext (nếu bạn còn đang sử dụng)
+  * Lý do là USBInjectAll thực sự phá vỡ cách Apple xây dựng bản đồ cổng. Nên dù nó tốt cho việc lập sơ đồ cổng ban đầu, nó có thể làm hư cái sơ đồ USB bạn mới vừa tạo
 * Kernel -> Quirks -> XhciPortLimit -> False
-  * Now that we're finally under the 15 port limit, we no longer need this hacky fix
+  * Giờ chúng ta đã nằm dưới giới hạn 15 cổng rồi, không cần cái thủ thuật hack này nữa
 
-Then reboot, and check IOReg one last time:
+Rồi khởi động lại và kiểm tra IOReg lần cuối:
 
 ![](../../images/post-install/manual-md/finished.png)
 
-Voila! As you can see, our USB map applied successfully!
+Voila! (Thấy chưa!) Như bạn thấy, sơ đồ USB của chúng ta đã áp dụng thành công mỹ mãn!
 
-The main properties to verify are:
+Các thuộc tính chính cần xác minh là:
 
-* Correct UsbConnector property on your USB ports
-* Comment applied(if injected)
-* Unused ports were removed
+* Thuộc tính UsbConnector phải chính xác trên các cổng USB.
+* Comment đã được áp dụng (nếu có nạp).
+* Mấy cái cổng cả đời không xài tới đã bị xóa sổ.

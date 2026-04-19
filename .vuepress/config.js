@@ -3,7 +3,7 @@ const {
 } = require('../package')
 
 module.exports = {
-    title: 'OpenCore Post-Install',
+    title: 'Sau khi cài đặt OpenCore',
     head: [
         ['meta', {
             name: 'theme-color',
@@ -22,7 +22,7 @@ module.exports = {
             href: "/styles/website.css"
         },]
     ],
-    base: '/OpenCore-Post-Install/',
+    base: '/Sau-khi-Cai-dat-OpenCore/',
 
     watch: {
         $page(newPage, oldPage) {
@@ -54,45 +54,45 @@ module.exports = {
     ],
 
     themeConfig: {
-        lastUpdated: true,
+        lastUpdated: false,
         repo: 'https://github.com/dortania/OpenCore-Post-Install',
         editLinks: true,
-        editLinkText: 'Help us improve this page!',
+        editLinkText: 'Cùng giúp chúng mình cải thiện trang này!',
         logo: '/homepage.png',
         nav: [{
-            text: 'Dortania Guides',
+            text: 'Sách hướng dẫn từ Dortania',
             items: [{
-                text: 'Home Site',
+                text: 'Trang chủ Dortania',
                 link: 'https://dortania.github.io/'
             },
             {
-                text: 'OpenCore Install Guide',
-                link: 'https://dortania.github.io/OpenCore-Install-Guide/'
+                text: 'Hướng dẫn cài đặt OpenCore',
+                link: 'https://baokhanhwithfriends.github.io/Huong-dan-cai-dat-OpenCore/'
             },
             {
-                text: 'OpenCore Multiboot',
-                link: 'https://dortania.github.io/OpenCore-Multiboot/'
+                text: 'Đa khởi động OpenCore',
+                link: 'https://baokhanhwithfriends.github.io/Da-khoi-dong-OpenCore/'
             },
             {
-                text: 'Getting Started With ACPI',
-                link: 'https://dortania.github.io/Getting-Started-With-ACPI/'
+                text: 'Khởi đầu với ACPI',
+                link: 'https://baokhanhwithfriends.github.io/Khoi-dau-voi-ACPI/'
             },
             {
-                text: 'GPU Buyers Guide',
-                link: 'https://dortania.github.io/GPU-Buyers-Guide/'
+                text: 'Hướng dẫn chọn mua card màn hình',
+                link: 'https://baokhanhwithfriends.github.io/Huong-dan-chon-mua-card-man-hinh/'
             },
             {
-                text: 'Wireless Buyers Guide',
-                link: 'https://dortania.github.io/Wireless-Buyers-Guide/'
+                text: 'Hướng dẫn chọn mua card mạng không dây',
+                link: 'https://baokhanhwithfriends.github.io/Huong-dan-chon-mua-card-mang-khong-day/'
             },
             {
-                text: 'Anti Buyers Guide',
-                link: 'https://dortania.github.io/Anti-Hackintosh-Buyers-Guide/'
+                text: 'Hướng dẫn tránh mua lầm phần cứng "khắc tinh"',
+                link: 'https://baokhanhwithfriends.github.io/Huong-dan-tranh-mua-lam-phan-cung-khac-tinh-voi-Hackintosh/'
             },
             ]
         },],
         sidebar: [{
-            title: 'Introduction',
+            title: 'Phần giới thiệu',
             collapsable: false,
             sidebarDepth: 1,
             children: [
@@ -101,131 +101,131 @@ module.exports = {
 
         },
         {
-            title: 'Universal',
+            title: 'Các chức năng cơ bản',
             collapsable: false,
             sidebarDepth: 2,
             children: [
 
-                ['/universal/audio', 'Fixing Audio'],
-                ['/universal/oc2hdd', 'Booting without USB'],
-                ['/universal/update', 'Updating OpenCore, kexts and macOS'],
-                ['/universal/drm', 'Fixing DRM'],
-                ['/universal/iservices', 'Fixing iServices'],
-                ['/universal/pm', 'Fixing Power Management'],
-                ['/universal/sleep', 'Fixing Sleep'],
+                ['/universal/audio', 'Sửa lỗi âm thanh'],
+                ['/universal/oc2hdd', 'Khởi động không cần USB'],
+                ['/universal/update', 'Cập nhật OpenCore, kexts và macOS'],
+                ['/universal/drm', 'Sửa lỗi quản lý bản quyền số (DRM)'],
+                ['/universal/iservices', 'Sửa mấy cái ứng dụng dịch vụ của Apple không xài được'],
+                ['/universal/pm', 'Sửa lỗi điều phối điện năng nâng cao'],
+                ['/universal/sleep', 'Sửa chế độ ngủ không hoạt động'],
             ]
         },
         {
-            title: 'USB Fixes',
+            title: 'Sửa lỗi USB',
             collapsable: false,
             sidebarDepth: 1,
             children: [
-                ['/usb/', 'USB Mapping: Introduction'],
-                ['/usb/system-preparation', 'System Preparation'],
+                ['/usb/', 'Lập sơ đồ cổng USB: Phần giới thiệu'],
+                ['/usb/system-preparation', 'Chuẩn bị hệ thống'],
                 {
-                    title: 'USB Mapping',
+                    title: 'Bắt đầu lập sơ đồ cổng USB',
                     collapsable: true,
                     sidebarDepth: 2,
                     children: [
-                        ['/usb/intel-mapping/intel', 'Intel USB mapping'],
-                        ['/usb/manual/manual', 'Manual Mapping'],
+                        ['/usb/intel-mapping/intel', 'Lập sơ đồ cổng USB cho máy Intel'],
+                        ['/usb/manual/manual', 'Lập sơ đồ cổng USB thủ công'],
                     ]
                 },
                 {
-                    title: 'Miscellaneous Fixes',
+                    title: 'Sửa mấy lỗi lặt vặt liên quan tới USB',
                     collapsable: true,
                     sidebarDepth: 1,
                     children: [
-                        ['/usb/misc/power', 'Fixing USB Power'],
-                        ['/usb/misc/shutdown', 'Fixing Shutdown/Restart'],
-                        ['/usb/misc/instant-wake', 'Fixing Instant Wake'],
-                        ['/usb/misc/keyboard', 'Fixing Keyboard Wake Issues'],
+                        ['/usb/misc/power', 'Sửa cấp nguồn USB không đúng điện áp'],
+                        ['/usb/misc/shutdown', 'Sửa lỗi không tắt máy/khởi động lại được'],
+                        ['/usb/misc/instant-wake', 'Sửa lỗi dậy tức thì khi mới ngủ'],
+                        ['/usb/misc/keyboard', 'Sửa lỗi không đánh thức máy được bằng bàn phím'],
                     ]
                 },
             ]
         },
         {
-            title: 'Security',
+            title: 'Cải thiện Bảo mật',
             collapsable: false,
             sidebarDepth: 2,
             children: [
-                ['/universal/security', 'Security and FileVault'],
+                ['/universal/security', 'Bảo mật và Mã hóa ổ cứng bằng FileVault'],
                 {
                     title: '',
                     collapsable: false,
                     sidebarDepth: 2,
                     children: [
-                        ['/universal/security/filevault', 'FileVault'],
-                        ['/universal/security/vault', 'Vault'],
-                        ['/universal/security/scanpolicy', 'ScanPolicy'],
-                        ['/universal/security/password', 'OpenCore Menu Password'],
-                        ['/universal/security/applesecureboot', 'Apple Secure Boot'],
+                        ['/universal/security/filevault', 'FileVault (Mã hoá ổ cứng)'],
+                        ['/universal/security/vault', 'Vault (Niêm phong hệ thống)'],
+                        ['/universal/security/scanpolicy', 'ScanPolicy (Chính sách quét ổ đĩa)'],
+                        ['/universal/security/password', 'Menu mật khẩu OpenCore'],
+                        ['/universal/security/applesecureboot', 'Tính năng Khởi động an toàn của Apple'],
                     ]
                 },
             ]
         },
         {
-            title: 'Laptop Specifics',
+            title: 'Dành riêng cho laptop',
             collapsable: false,
             children: [
-                ['/laptop-specific/battery', 'Fixing Battery Read-outs'],
+                ['/laptop-specific/battery', 'Sửa lỗi hiển thị Thông số Pin'],
 
             ]
         },
         {
-            title: 'Cosmetics',
+            title: 'Làm đẹp/Giao diện',
             collapsable: false,
             children: [
-                ['/cosmetic/verbose', 'Fixing Resolution and Verbose'],
-                ['/cosmetic/gui', 'Add GUI and Boot-chime'],
-                ['/universal/memory', 'Fixing MacPro7,1 Memory Errors'],
+                ['/cosmetic/verbose', 'Sửa độ phân giải không đúng và tắt màn hình dòng lệnh chạy chữ'],
+                ['/cosmetic/gui', 'Thêm giao diện và âm thanh khởi động'],
+                ['/universal/memory', 'Sửa lỗi bộ nhớ khi xài SMBIOS MacPro7,1'],
             ]
         },
         {
-            title: 'Multiboot',
+            title: 'Chạy nhiều hệ điều hành',
             collapsable: false,
             children: [
-                ['https://dortania.github.io/OpenCore-Multiboot/', 'OpenCore Multiboot'],
-                ['/multiboot/bootstrap', 'Setting up LauncherOption'],
-                ['/multiboot/bootcamp', 'Installing BootCamp'],
+                ['https://dortania.github.io/OpenCore-Multiboot/', 'Đa khởi động với OpenCore'],
+                ['/multiboot/bootstrap', 'Thiết lập tùy chọn trình khởi chạy LauncherOption'],
+                ['/multiboot/bootcamp', 'Cài đặt BootCamp'],
             ]
         },
         {
-            title: 'Miscellaneous',
+            title: 'Linh tinh lang tang',
             collapsable: false,
             children: [
-                ['/misc/rtc', 'Fixing RTC'],
-                ['/misc/msr-lock', 'Fixing CFG Lock'],
-                ['/misc/nvram', 'Emulated NVRAM'],
+                ['/misc/rtc', 'Sửa lỗi ghi dữ liệu RTC/CMOS'],
+                ['/misc/msr-lock', 'Sửa lỗi khóa cấu hình CFG Lock (Mở khóa thanh ghi MSR 0xE2)'],
+                ['/misc/nvram', 'Giả lập bộ nhớ NVRAM'],
             ]
         },
         {
-            title: 'GPU Patching',
+            title: 'Vá lỗi card màn hình',
             collapsable: false,
             children: [
-                ['/gpu-patching/', 'In-depth GPU patching'],
+                ['/gpu-patching/', 'Vá lỗi card màn hình chuyên sâu'],
                 {
-                    title: 'Modern Intel iGPU',
+                    title: 'Vá lỗi cho card màn hình onboard Intel (đời mới)',
                     collapsable: false,
                     children: [
-                        ['/gpu-patching/intel-patching/', 'Intro to iGPU patching'],
-                        ['/gpu-patching/intel-patching/vram', 'VRAM patching'],
-                        ['/gpu-patching/intel-patching/connector', 'Connector-type patching'],
-                        ['/gpu-patching/intel-patching/busid', 'BusID patching'],
+                        ['/gpu-patching/intel-patching/', 'Sửa lỗi iGPU nâng cao'],
+                        ['/gpu-patching/intel-patching/vram', 'Vá lỗi bộ nhớ VRAM'],
+                        ['/gpu-patching/intel-patching/connector', 'Vá chuẩn kết nối màn hình'],
+                        ['/gpu-patching/intel-patching/busid', 'Vá lỗi không xuất được hình nâng cao (vá BusID)'],
                     ]
                 },
                 {
-                    title: 'Legacy Intel iGPU',
+                    title: 'Vá lỗi cho card màn hình onboard Intel (đời siêu... cũ)',
                     collapsable: false,
                     children: [
-                        ['/gpu-patching/legacy-intel/', 'GMA Patching'],
+                        ['/gpu-patching/legacy-intel/', 'Cách vá lỗi cho onboard GMA'],
                     ]
                 },
                 {
-                    title: 'Legacy Nvidia',
+                    title: 'Vá lỗi cho card màn hình Nvidia (đời siêu... cũ)',
                     collapsable: false,
                     children: [
-                        ['/gpu-patching/nvidia-patching/', 'Nvidia Patching'],
+                        ['/gpu-patching/nvidia-patching/', 'Cách vá lỗi cho card màn hình Nvidia đời cũ'],
                     ]
                 },
             ]

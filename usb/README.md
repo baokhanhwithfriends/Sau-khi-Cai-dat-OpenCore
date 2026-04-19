@@ -1,51 +1,51 @@
-# Why should you USB map
+# Tại sao bạn phải lập sơ đồ cổng USB
 
-So the process of USB mapping is defining your ports to macOS and telling it what kind they are, the reasons we want to do this are:
+Quy trình lập sơ đồ cổng USB (map USB) là việc định nghĩa các cổng kết nối cho macOS biết và nói cho nó biết trên máy có những loại cổng gì. Lý do tụi mình cần làm bước này là vì:
 
-* macOS is very bad at guessing what kind of ports you have
-* Some ports may run below their rated speed(3.1 ports running at 2.0)
-* Some ports may outright not work
-* Bluetooth not working
-* Certain services like Handoff may not work correctly
-* Sleep may break
-* Broken Hot-Plug
-* Even data corruption from `XhciPortLimit`
+* macOS đoán loại cổng USB trong máy bạn cực kì dở tệ (Vì nó được lập trình cứng chạy với sơ đồ cổng USB do Apple thiết kế tương ứng với số cổng USB có trên máy Mac chứ không làm dạng tự quét rồi lưu sơ đồ cổng giống Windows).
+* Một số cổng có thể chạy chậm hơn tốc độ định mức (cổng 3.1 mà chạy ì ạch như 2.0).
+* Một số cổng tịt ngòi luôn không chạy.
+* Bluetooth đình công không làm việc.
+* Mấy cái dịch vụ của hệ điều hành như Handoff có thể chạy không ổn định.
+* Chế độ ngủ (Sleep) có thể bị lỗi.
+* Tính năng Cắm nóng (Hot-Plug) không sử dụng được (tức là cắm khi máy đã khởi động HĐH rồi thì không nhận mà phải cắm thiết bị USB từ lúc mở máy).
+* Thậm chí USB, ổ cứng rời mà bạn cắm có nguy cơ dữ liệu bị hư hỏng do xài `XhciPortLimit`
 
-So now that you know why you should USB map, we can now talk about technical info of USB mapping. This is a section you cannot skip, otherwise all info below will seem like a very broken Russian translation written by a very drunk slav.
+Giờ thì bạn đã biết tại sao phải lập sơ đồ cổng USB rồi, chúng ta có thể bàn về thông tin kỹ thuật của việc map USB. Phần này cấm có tua nhanh nha, không là đọc mấy phần dưới sẽ cảm giác như đang đọc tiếng Nga ngọng nghịu viết bởi một ông say rượu đó (ý là không hiểu mô tê gì đâu).
 
-So with USB, we need to understand not all ports are the same and that some ports are actually hiding other ports within them! What I mean by this is the following:
+Với USB, bạn cần hiểu là không phải cổng nào cũng như cổng nào, một số cổng thực ra đang giấu một cổng khác bên trong nó! Ý mình là như vầy:
 
-* A USB 3.0 port is actually seen as 2 ports to macOS: a USB 2.0 **and** USB 3.0
-* This is also how USB can keep its backwards compatibility, as all USB 3.0 devices **must** support USB 2.0
+* Một cổng USB 3.0 thực ra được macOS nhìn nhận là 2 cổng: một cái USB 2.0 **và** một cái USB 3.0.
+* Đây cũng là cách USB giữ khả năng tương thích ngược, vì mọi thiết bị USB 3.0 **phải** hỗ trợ USB 2.0.
 
-Now let's look at a diagram of a USB port to better understand this:
+Giờ nhìn cái sơ đồ cấu tạo cổng USB này để dễ hình dung nè:
 
 ![Image from usb3.com](../images/post-install/usb-md/usb-3.png)
 
-As you can see, the bottom 4 pins are dedicated to USB 2.0 and when the extra 5 pins above are recognized the device will switch to a USB 3.0 mode.
+Như bạn thấy đó, 4 chân bên dưới dành riêng cho USB 2.0, khi 5 cái chân thêm ở phía trên được nhận diện thì thiết bị sẽ chuyển sang chế độ USB 3.0.
 
-Now with the basic understanding out of the way, we now have to talk about the dreadful 15 port limit.
+Giờ đã thông não mấy cái cơ bản rồi, chúng ta phải nói về cái giới hạn 15 cổng đáng sợ.
 
-## macOS and the 15 Port Limit
+## macOS và giới hạn 15 cổng
 
-Now let me take you back in time to the late 2015's and the release of OS X 10.11, El Capitan. This was an update that established much of what both blesses us and pains us in the community like System Integrity Protection and the 15 port limit.
+Để mình đưa bạn lên cỗ máy thời gian của Doraemon quay ngược thời gian về cuối năm 2015, lúc OS X 10.11 El Capitan ra mắt. Đây là bản cập nhật mang đến nhiều thứ vừa là ân huệ vừa là nỗi đau cho cộng đồng Hackintosh, điển hình như System Integrity Protection (Bảo vệ toàn vẹn hệ thống) và giới hạn 15 cổng.
 
-What the 15 port limit is in macOS(then called OS X) is a strict limit of only 15 possible ports per controller, this becomes an issue when we look at the chipset ports included on your motherboard:
+Giới hạn 15 cổng trong macOS (hồi đó vẫn còn tên là OS X) là giới hạn cứng chỉ cho phép tối đa 15 cổng trên mỗi bộ điều khiển (controller). Vụ này trở thành rắc rối khi nhìn vào số lượng cổng chipset có trên bo mạch chủ của bạn:
 
-* Z170 and newer Chipsets: 26 Ports in total
+* Chipset Z170 và mới hơn: Tổng cộng 26 cổng.
 
-And you may not even have 26 actual ports, but they're still declared in your ACPI tables causing issues as macOS can't tell the difference between a real port and one your firmware writers forgot to remove.
+Và thậm chí máy bạn chả có đủ 26 cổng vật lý thật đâu, nhưng tụi nó vẫn được khai báo trong bảng ACPI gây ra lỗi vì macOS không phân biệt được đâu là cổng thật và đâu là cổng mà mấy ông viết firmware lười xóa đi.
 
-> But why did Apple choose 15 ports as the limit?
+> Nhưng sao Apple lại chọn con số 15 làm giới hạn?
 
-Well this gets into a fun subset of computers, the hexadecimal counting system! How this differs from our decimal system is that there are a total of 15 values with the last one being `0xF`. This meant it was just cleaner to stop at 15 than to say expand the port limit to 255(0xFF), and in Apple's eyes it made little sense to have anything above 15 ports as no Macs they supported went over this limit. And if a Mac Pro user added a USB expansion card, it would get it's own 15 port limit.
+Cái này liên quan đến một mảng thú vị của máy tính: hệ đếm thập lục phân (hexadecimal)! Nó khác hệ thập phân của chúng ta ở chỗ tổng cộng có 15 giá trị (đếm từ 1) với giá trị cuối cùng là `0xF`. Nghĩa là dừng ở 15 thì gọn gàng hơn là mở rộng giới hạn lên tới 255 (0xFF), trong mắt Apple thì việc có hơn 15 cổng là vô nghĩa vì chả có máy Mac nào họ bán ra vượt quá con số này cả. Và nếu người dùng Mac Pro cắm thêm card mở rộng USB, cái card đó sẽ có giới hạn 15 cổng riêng của nó.
 
-And now when we take into account the quirk `XhciPortLimit`, you can see *why* data corruption can happen. As we're pushing past the 0xF limit and going into someone else's space. So avoid this quirk when possible.
+Và giờ khi tính đến cái quirk (cài đặt đặc biệt) `XhciPortLimit`, bạn sẽ hiểu *tại sao* dữ liệu có thể bị hỏng. Vì chúng ta đang cố vượt qua giới hạn 0xF và lấn sang vùng nhớ của người khác. Nên hãy tránh dùng cái quirk này nếu có thể.
 
-* Note: While the name `XhciPortLimit` may seem that it's limiting the number of XHCI ports, it's in-fact patching the XHCI Port Limit to a higher value.
+* Lưu ý: Mặc dù cái tên `XhciPortLimit` nghe như kiểu nó giới hạn số cổng XHCI, nhưng thực tế nó đang vá Giới hạn cổng XHCI lên một giá trị cao hơn.
 
-> What about USB hubs?
+> Vậy còn USB hub thì sao?
 
-USB Hubs attached to one of your USB controller's ports have a different kind of port limit. In total, a single USB port can be split into 127 ports. This includes USB hubs attached to USB hubs
+USB Hub cắm vào một trong các cổng của bộ điều khiển USB có giới hạn cổng kiểu khác. Tổng cộng, một cổng USB đơn lẻ có thể chia tách thành 127 cổng. Cái này tính cả USB hub cắm nối tiếp vào USB hub khác luôn.
 
-## Now with the backstory done, let's head to [System Preparations](./system-preparation.md)
+## Giờ xong phần kể chuyện đêm khuya rồi, chuyển sang phần [Chuẩn bị hệ thống](./system-preparation.md) nào
